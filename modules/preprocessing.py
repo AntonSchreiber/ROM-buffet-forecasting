@@ -1,9 +1,5 @@
-from os import makedirs
 from os.path import join
 import torch as pt
-import numpy as np
-from pandas import DataFrame
-import matplotlib.pyplot as plt
 
 data_path = "./data"
 
@@ -34,14 +30,14 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor
     Args:
         x (pt.Tensor): x-coordinates array
         y (pt.Tensor): y-coordinates array
-        cp (dict): time dependant pressure coefficient data
+        cp (dict): time dependant pressure data
         cases (dict): dict with the case names as keys and the filtered Ma and alpha as vals
 
     Returns:
         pt.Tensor: Fully assembled data tensor
     """
     # Extract information about the data dimesnions
-    dataset_len = sum([val.numel() for key, val in cp.items()])
+    dataset_len = sum([val.numel() for _, val in cp.items()])
     keys = list(cp.keys())
     vals_per_step = cp[keys[0]].shape[0]*cp[keys[0]].shape[1]
     num_timesteps = cp[keys[0]].shape[2]
@@ -56,7 +52,9 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor
         t1, t2= step*vals_per_step, (step+1)*vals_per_step
         t[t1:t2] = step
 
-    data = pt.zeros((dataset_len, 6))
+    # Create the data tensor in 16bit float format
+    data = pt.zeros((dataset_len, 6), dtype=pt.float16)
+
     # Loop over Ma-alpha confs
     for i, (key, vals) in enumerate(cp.items()):
         # start and end indices for current conf in data tensor
@@ -70,7 +68,8 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor
         data[start:end, 4] = t
         data[start:end, 5] = pt.reshape(vals, (vals.numel(), 1)).squeeze()
 
-    print("Dataset size     =", data.shape, "\n")
+    print("Dataset shape     =", data.shape)
+    print("Dataset size      =", float(data.element_size()) * float(data.nelement()) /1e+9, "GB \n")
 
     return data
 
@@ -88,6 +87,8 @@ def get_coords() -> tuple[pt.Tensor, pt.Tensor]:
     # reshape 2D grid to 1D array
     x= pt.reshape(x_grid, (x_grid.numel(), 1)).squeeze()
     y= pt.reshape(y_grid, (y_grid.numel(), 1)).squeeze()
+
+    print(x.dtype)
     
     return x, y
 
@@ -107,6 +108,8 @@ def get_cp_and_cases() -> tuple[pt.Tensor, dict]:
     cases = [key.replace("ma", "").replace("_alpha", "") for key in list(cp.keys())]
     cases_dict = {keys[i]: [float(case[:4]), float(case[4:])] for i, case in enumerate(cases)}
 
+    print(cp[keys[0]].dtype)
+
     return cp, cases_dict
 
 
@@ -121,8 +124,8 @@ if __name__ == "__main__":
     data = reshape_data(x, y, cp, cases)
     print("Data reshaped")
 
-    # Save the data as a TensorDataset
-    print("Creating TensorDataset")
-    dataset = pt.utils.data.TensorDataset(data[:, :5], data[:, 5])
-    pt.save(dataset, join(data_path, "dataset.pt"))
-    print("Dataset saved")
+    # # Save the data as a TensorDataset
+    # print("Creating TensorDataset")
+    # dataset = pt.utils.data.TensorDataset(data[:, :5], data[:, 5])
+    # pt.save(dataset, join(data_path, "dataset.pt"))
+    # print("Dataset saved")
