@@ -1,5 +1,8 @@
 from os.path import join
 import torch as pt
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 data_path = "./data"
 
@@ -36,6 +39,7 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor
     Returns:
         pt.Tensor: Fully assembled data tensor
     """
+    print("Reshaping data")
     # Extract information about the data dimesnions
     dataset_len = sum([val.numel() for _, val in cp.items()])
     keys = list(cp.keys())
@@ -43,17 +47,17 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor
     num_timesteps = cp[keys[0]].shape[2]
 
     # clone x and y by the amount of timesteps to achieve desired dimension
-    x = pt.tile(x, (num_timesteps,))
-    y = pt.tile(y, (num_timesteps,))
+    x = np.tile(x, (num_timesteps,))
+    y = np.tile(y, (num_timesteps,))
 
     # creating array with timesteps 
-    t = pt.zeros((cp[keys[0]].numel(),))
+    t = np.zeros((cp[keys[0]].numel(),))
     for step in range(1, num_timesteps):
         t1, t2= step*vals_per_step, (step+1)*vals_per_step
         t[t1:t2] = step
 
     # Create the data tensor in 16bit float format
-    data = pt.zeros((dataset_len, 6), dtype=pt.float16)
+    data = np.zeros((dataset_len, 6), dtype=np.float32)
 
     # Loop over Ma-alpha confs
     for i, (key, vals) in enumerate(cp.items()):
@@ -63,14 +67,15 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor
         # assigning data to corresponding tensor column
         data[start:end, 0] = x
         data[start:end, 1] = y
-        data[start:end, 2] = pt.full((vals.numel(),), cases[key][0])
-        data[start:end, 3] = pt.full((vals.numel(),), cases[key][0])
+        data[start:end, 2] = np.full((vals.numel(),), cases[key][0])
+        data[start:end, 3] = np.full((vals.numel(),), cases[key][1])
         data[start:end, 4] = t
-        data[start:end, 5] = pt.reshape(vals, (vals.numel(), 1)).squeeze()
+        data[start:end, 5] = np.reshape(vals, (vals.numel(), 1)).squeeze()
 
     print("Dataset shape     =", data.shape)
-    print("Dataset size      =", float(data.element_size()) * float(data.nelement()) /1e+9, "GB \n")
+    print("Dataset size      =", data.nbytes /1e+9, "GB \n")
 
+    print("Data reshaped")
     return data
 
 
@@ -81,6 +86,7 @@ def get_coords() -> tuple[pt.Tensor, pt.Tensor]:
         tuple[pt.Tensor, pt.Tensor]: x and y coordinates arrays
     """
     # Load the coordinate grid
+    print("Loading x, y data")
     coords = load_data("coords.pt")
     x_grid, y_grid = coords["ma0.84_alpha4.00"]
 
@@ -96,11 +102,18 @@ def get_cp_and_cases() -> tuple[pt.Tensor, dict]:
     Returns:
         tuple[pt.Tensor, dict]: cp tensor and dict with the case names as keys and the filtered Ma and alpha as vals
     """
+    print("Loading cp data")
     # Load the cp data
     cp = load_data("cp_test.pt")
 
     # Get the conf names
     keys = list(cp.keys())
+
+    # discard 75% of the snapshots for now
+    cp[keys[0]], _ = cp[keys[0]].split([500, 1500], dim=2)
+    print(cp[keys[0]].shape)
+    cp[keys[1]], _ = cp[keys[1]].split([500, 1500], dim=2)
+    print(cp[keys[1]].shape)
 
     # Delete the "ma" and "_alpha" from the keys and convert to float
     cases = [key.replace("ma", "").replace("_alpha", "") for key in list(cp.keys())]
@@ -109,19 +122,59 @@ def get_cp_and_cases() -> tuple[pt.Tensor, dict]:
     return cp, cases_dict
 
 
-if __name__ == "__main__":
-    # Out-of-Loop Pre-Processing to assemble the global dataset
-    print("Loading data")
-    x, y = get_coords()
-    cp, cases = get_cp_and_cases()
-    
-    # Reshape all of the data into one tensor
-    print("Reshaping data")
-    data = reshape_data(x, y, cp, cases)
-    print("Data reshaped")
+def to_dataframe(data: np.ndarray) -> pd.DataFrame:
+    """Convert a numpy array to a pandas dataframe
 
-    # # Save the data as a TensorDataset
-    # print("Creating TensorDataset")
-    # dataset = pt.utils.data.TensorDataset(data[:, :5], data[:, 5])
-    # pt.save(dataset, join(data_path, "dataset.pt"))
-    # print("Dataset saved")
+    Args:
+        data (np.ndarray): Data array
+
+    Returns:
+        pd.DataFrame: Dataframe
+    """
+    column_names = ["x", "y", "Ma", "alpha", "t", "cp"]
+    df = pd.DataFrame(data, columns=column_names)
+
+    print(df.info())
+    print(df.sample(5))
+
+    print("Data converted to pandas dataframe")
+
+    return df
+
+
+def split_scale_save(df: pd.DataFrame, train_size: float, val_size: float, test_size: float):
+    """Split the data into training, validation and testing data
+
+    Args:
+        df (pd.DataFrame): Dataframe
+        train_size (float): Size of training data
+        val_size (float): Size of validation data
+        test_size (float): Size of testing data
+    """
+    # Split the data into training, validation and testing data
+    val_end = train_size + val_size
+    n = len(df)
+
+    print("Splitting data")
+    df_train = df[0:int(train_size*n)]
+    df_val = df[int(train_size*n):int(val_end*n)]
+    df_test = df[int(val_end*n):]
+
+    # Train MinMaxScaler on training data
+    print("Fitting MinMaxScaler on training data")
+    scaler = MinMaxScaler()
+    scaler.fit(df_train)
+
+    # Scale subsets with the fitted scaler
+    print("Scaling datasets with the fitted scaler")
+    df_train[df_train.columns] = scaler.transform(df_train[df_train.columns])
+    df_val[df_val.columns] = scaler.transform(df_val[df_val.columns])
+    df_test[df_test.columns] = scaler.transform(df_test[df_test.columns])
+
+    # Save the training, validation and testing data
+    print("Saving training, validation and testing data to csv files")
+    df_train.to_csv(join(data_path, "train.csv"), index=False)
+    df_val.to_csv(join(data_path, "val.csv"), index=False)
+    df_test.to_csv(join(data_path, "test.csv"), index=False)
+
+    return df_train, df_val, df_test
