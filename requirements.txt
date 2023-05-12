@@ -5,4 +5,4 @@ matplotlib
 jupyterlab
 pandas
 scikit-learn
-darts
+git+https://github.com/FlowModelingControl/flowtorch.git

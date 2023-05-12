@@ -178,3 +178,15 @@ def split_scale_save(df: pd.DataFrame, train_size: float, val_size: float, test_
     df_test.to_csv(join(data_path, "test.csv"), index=False)
 
     return df_train, df_val, df_test
+
+
+def make_data_subset(Ma = "0.84", num_snapshots = 500):
+    cp = load_data("cp_clean.pt")
+    keys = [key for key in cp.keys() if Ma in key]
+
+    cp_084 = {key: cp[key] for key in keys}
+
+    for i, key in enumerate(keys):
+        cp_084[key] = cp_084[key][:,:,:num_snapshots]
+
+    pt.save(cp_084, "./data/cp_084_500snaps.pt")
