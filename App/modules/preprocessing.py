@@ -96,7 +96,7 @@ def get_coords() -> tuple[pt.Tensor, pt.Tensor]:
     
     return x, y
 
-def get_cp_and_cases() -> tuple[pt.Tensor, dict]:
+def get_cp_and_cases(cp_filename: str) -> tuple[pt.Tensor, dict]:
     """Load the raw cp data and extract the Ma and alpha
 
     Returns:
@@ -104,7 +104,7 @@ def get_cp_and_cases() -> tuple[pt.Tensor, dict]:
     """
     print("Loading cp data")
     # Load the cp data
-    cp = load_data("cp_test.pt")
+    cp = load_data(cp_filename)
 
     # Get the conf names
     keys = list(cp.keys())
