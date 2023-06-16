@@ -1,13 +1,14 @@
+import os
+from pathlib import Path
 from os.path import join
 import torch as pt
 from torch.nn.functional import interpolate
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 
-DATA_PATH = "./data"
+DATA_PATH = Path(os.path.abspath('')) / "data"
 TARGET_SHAPE_SLICE = (256, 128)
 TARGET_SHAPE_TENSOR = (256, 128, 500)
 
@@ -189,15 +190,13 @@ def make_data_subset(Ma: str = "0.84"):
     """From the original dataset, create a subset with a reduced number of snapshots, for only one Ma number and with interpolated data
 
     Args:
-        Ma (str, optional): Ma number that should be included in the dataset. Defaults to "0.84".
+        Ma (str, optional): Ma number that should be included in the dataset. Defaults to "0.84".+
         num_snapshots (int, optional): Number of snapshots that should be included in the dataset. Defaults to 500.
     """
     # load dataset and extract keys
     cp = load_data("cp_clean.pt")
     keys = list(cp.keys())
 
-    # get the original and new coordinate tuples
-    coords_orig, coords_new = get_coord_arrays()
 
     for key in keys:
         # if the desired Ma number is not in the key, it will be removed
@@ -212,59 +211,16 @@ def make_data_subset(Ma: str = "0.84"):
 
     # save the data subset
     print("Saving data subset ...")
-    pt.save(cp, "./data/cp_084_500snaps_interp.pt")
+    pt.save(cp, join(DATA_PATH, "cp_084_500snaps_interp.pt"))
     print("Done!")
 
 
-def get_coord_arrays() -> tuple[tuple, tuple]:
-    """Define x and y coordinates in the format required for RegularGridInterpolator
-
-    Returns:
-        tuple[tuple, tuple]: tuple of tuples with x and y coordinates in array format
-    """
-    orig_res = (465, 159)
-    x_orig = np.linspace(0, orig_res[0] - 1, orig_res[0])
-    y_orig = np.linspace(0, orig_res[1] - 1, orig_res[1])
-
-    new_res = (256, 128)
-    x_new = np.linspace(0, orig_res[0] - 1, new_res[0])
-    y_new = np.linspace(0, orig_res[1] - 1, new_res[1])
-
-    return (x_orig, y_orig), (x_new, y_new)
-
-
-def plot_interpolation(coords_orig, coords_new, tensor, interpolated_tensor):
-    x_mesh_orig, y_mesh_orig = pt.meshgrid(coords_orig[0], coords_orig[1], indexing='ij')
-    x_mesh_new, y_mesh_new = pt.meshgrid(coords_new[0], coords_new[1], indexing='ij')
-
-    mean, std = tensor[:, :, 0].mean(), tensor[:, :, 0].std()
-    vmin, vmax = mean - 2*std, mean + 2*std
-    levels = pt.linspace(vmin, vmax, 120)
-    
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    cont1 = ax1.contourf(x_mesh_orig, y_mesh_orig, tensor[:, :, 0], vmin=vmin, vmax=vmax, levels=levels, extend="both")
-    cont2 = ax2.contourf(x_mesh_new, y_mesh_new, interpolated_tensor[:, :, 0], vmin=vmin, vmax=vmax, levels=levels, extend="both")
-
-
-def create_new_coords(orig_res: tuple = (465, 159), new_res: tuple = (256, 128)):
-    """Create new coordinate meshes for interpolated data
-
-    Args:
-        orig_res (tuple, optional): original data resolution. Defaults to (465, 159).
-        new_res (tuple, optional): new data resolution. Defaults to (256, 128).
-    """
-    # create x and y arrays and convert them to meshes
-    x_new = pt.linspace(0, orig_res[0] - 1, new_res[0])
-    y_new = pt.linspace(0, orig_res[1] - 1, new_res[1])
-    x_mesh, y_mesh = pt.meshgrid(x_new, y_new, indexing='ij')
-
-    # save as .pt
-    pt.save((x_mesh, y_mesh), "./data/coords_interp.pt")
-
-
 def interpolate_coords():
+    """Interpolate the original coordinate grid to a given resolution
+    """
     print("INTERPOLATING COORDINATES")
 
+    # load original coordinate grid
     coords = load_data("coords.pt")
     xx, yy = coords[list(coords.keys())[0]]
     print("Original coordinate shape:       ", xx.shape)
@@ -279,18 +235,30 @@ def interpolate_coords():
     print("Done! \n")
 
 
-def interpolate_tensor(data_tensor: pt.Tensor):
+def interpolate_tensor(data_tensor: pt.Tensor) -> pt.Tensor:
+    """Interpolate a time-resolved data tensor to a given resolution
+
+    Args:
+        data_tensor (pt.Tensor): data tensor of shape (y, x, time)
+
+    Returns:
+        pt.Tensor: interpolated tensor
+    """
     print("INTERPOLATING DATA TENSOR")
     print("Original tensor shape:           ", data_tensor.shape)
 
+    # initialize new tensor with desired shape
     data_tensor_interp = pt.empty(TARGET_SHAPE_TENSOR)
+
     print("Interpolating ...")
+    # loop over each timestep to interpolate the data
     for timestep in range(data_tensor.shape[2]):
         data_tensor_interp[:,:,timestep] = interpolate(data_tensor[:, :, timestep].unsqueeze(0).unsqueeze(0), size=TARGET_SHAPE_SLICE, mode="bilinear", align_corners=False).squeeze()
 
     print("Interpolated tensor shape:       ", data_tensor_interp.shape, "\n")
-    return(data_tensor)
+    return data_tensor_interp
 
 if __name__ == "__main__":
+    # preprocessing functions that interpolate coords from (465 x 159) to (256 x 128) and create a subset of the full dataset
     # interpolate_coords()
     make_data_subset()
