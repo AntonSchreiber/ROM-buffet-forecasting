@@ -262,24 +262,29 @@ def preprocessing():
     print("Reshaped grid size:          ", x.shape)
 
     # identify keys for train data inside data dict
-    train_keys = [key for key in list(data.keys()) if key not in config.nn_val_keys + config.nn_test_keys]
-    train_data = data[train_keys[0]].flatten(0, 1)
+    train_keys = [key for key in list(data.keys()) if key not in config.test_keys]
+    split_index = int(config.train_split)
+
+    train_data = data[train_keys[0]][:, :, :split_index].flatten(0, 1)
+    val_data = data[train_keys[0]][:, :, split_index:].flatten(0, 1)
+
     for train_key in train_keys[1:]:
-        train_data = pt.concat((train_data, data[train_key].flatten(0, 1)), dim=1)
+        train_split = data[train_key][:, :, :split_index]
+        val_split = data[train_key][:, :, split_index:]
+        train_data = pt.concat((train_data, train_split.flatten(0, 1)), dim=1)
+        val_data = pt.concat((val_data, val_split.flatten(0, 1)), dim=1)
+
     print("Shape of train pressure data:        ", train_data.shape)
-    train_tensor = reshape_data(x, y, train_data)
+    train_tensor = reshape_data(x, y, train_data, "train")
 
-    val_data = data[config.nn_val_keys[0]].flatten(0, 1)
-    for val_key in config.nn_val_keys[1:]:
-        val_data = pt.concat((val_data, data[val_key].flatten(0, 1)), dim=1)
     print("Shape of validation pressure data:   ", val_data.shape)
-    val_tensor = reshape_data(x, y, val_data)
+    val_tensor = reshape_data(x, y, val_data, "val")
 
-    test_data = data[config.nn_test_keys[0]].flatten(0, 1)
-    for test_key in config.nn_test_keys[1:]:
+    test_data = data[config.test_keys[0]].flatten(0, 1)
+    for test_key in config.test_keys[1:]:
         test_data = pt.concat((test_data, data[test_key].flatten(0, 1)), dim=1)
     print("Shape of test pressure data:         ", test_data.shape)
-    test_tensor = reshape_data(x, y, test_data)
+    test_tensor = reshape_data(x, y, test_data, "test")
 
     print("Fitting Scaler on training data")
     feature_scaler = StandardScaler().fit(train_tensor[:,1:])
@@ -297,8 +302,9 @@ def preprocessing():
     print("Done! \n")
 
 
-def reshape_data(x, y, pressure_data):
+def reshape_data(x, y, pressure_data, type):
     print("Reshaping ...")
+
     rows = pressure_data.shape[0] * pressure_data.shape[1]
     cols = 4
     pts_per_timestep = x.shape[0]
@@ -311,7 +317,16 @@ def reshape_data(x, y, pressure_data):
         start, end = time_step*pts_per_timestep, (time_step+1)*pts_per_timestep
         tensor[start:end, 1] = x
         tensor[start:end, 2] = y
-        tensor[start:end, 3] = time_step%config.time_steps_per_cond
+        if type == "train":
+            # timesteps ranging from 000-449
+            tensor[start:end, 3] = time_step % (config.time_steps_per_cond - config.val_split)
+        elif type == "val":
+            # timesteps ranging from 450-499
+            tensor[start:end, 3] = (time_step + config.train_split) % config.time_steps_per_cond
+        else:
+            # timesteps ranging from 000-499
+            tensor[start:end, 3] = time_step % config.time_steps_per_cond
+
     tensor[:, 0] = pressure_data_resh
 
     print("Shape of data tensor:                ", tensor.shape, "\n")
