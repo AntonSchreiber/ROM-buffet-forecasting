@@ -1,12 +1,22 @@
 import os
+import sys
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+app_dir = os.path.join(parent_dir, "app")
+if app_dir not in sys.path:
+      sys.path.append(app_dir)
+
+from utils import config
+from utils.StandardScaler import StandardScaler
 from pathlib import Path
 from os.path import join
 import torch as pt
 from torch.nn.functional import interpolate
+from torch.utils.data import TensorDataset
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
+
+
 
 DATA_PATH = Path(os.path.abspath('')) / "data"
 TARGET_SHAPE_SLICE = (256, 128)
@@ -33,7 +43,7 @@ def load_data(filename: str) -> pt.Tensor:
     return data
 
 
-def reshape_data(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor:  
+def reshape_data_depr(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor:  
     """Reshapes all of the data into the desired shape for the models
 
     Args:
@@ -126,26 +136,6 @@ def get_cp_and_cases(cp_filename: str) -> tuple[pt.Tensor, dict]:
     cases_dict = {keys[i]: [float(case[:4]), float(case[4:])] for i, case in enumerate(cases)}
 
     return cp, cases_dict
-
-
-def to_dataframe(data: np.ndarray) -> pd.DataFrame:
-    """Convert a numpy array to a pandas dataframe
-
-    Args:
-        data (np.ndarray): Data array
-
-    Returns:
-        pd.DataFrame: Dataframe
-    """
-    column_names = ["x", "y", "Ma", "alpha", "t", "cp"]
-    df = pd.DataFrame(data, columns=column_names)
-
-    print(df.info())
-    print(df.sample(5))
-
-    print("Data converted to pandas dataframe")
-
-    return df
 
 
 def split_scale_save(df: pd.DataFrame, train_size: float, val_size: float, test_size: float):
@@ -258,7 +248,77 @@ def interpolate_tensor(data_tensor: pt.Tensor) -> pt.Tensor:
     print("Interpolated tensor shape:       ", data_tensor_interp.shape, "\n")
     return data_tensor_interp
 
+
+def preprocessing():
+    # load interpolated dataset
+    data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
+    coords = pt.load(join(DATA_PATH, "coords_interp.pt"))
+    grid_size = config.target_resolution[0] * config.target_resolution[1]
+    xx, yy = coords
+    print("Grid shape:                  ", xx.shape)
+
+    x = xx.reshape([grid_size, 1]).squeeze()
+    y = yy.reshape([grid_size, 1]).squeeze()
+    print("Reshaped grid size:          ", x.shape)
+
+    # identify keys for train data inside data dict
+    train_keys = [key for key in list(data.keys()) if key not in config.nn_val_keys + config.nn_test_keys]
+    train_data = data[train_keys[0]].flatten(0, 1)
+    for train_key in train_keys[1:]:
+        train_data = pt.concat((train_data, data[train_key].flatten(0, 1)), dim=1)
+    print("Shape of train pressure data:        ", train_data.shape)
+    train_tensor = reshape_data(x, y, train_data)
+
+    val_data = data[config.nn_val_keys[0]].flatten(0, 1)
+    for val_key in config.nn_val_keys[1:]:
+        val_data = pt.concat((val_data, data[val_key].flatten(0, 1)), dim=1)
+    print("Shape of validation pressure data:   ", val_data.shape)
+    val_tensor = reshape_data(x, y, val_data)
+
+    test_data = data[config.nn_test_keys[0]].flatten(0, 1)
+    for test_key in config.nn_test_keys[1:]:
+        test_data = pt.concat((test_data, data[test_key].flatten(0, 1)), dim=1)
+    print("Shape of test pressure data:         ", test_data.shape)
+    test_tensor = reshape_data(x, y, test_data)
+
+    print("Fitting Scaler on training data")
+    feature_scaler = StandardScaler().fit(train_tensor[:,1:])
+    label_scaler = StandardScaler().fit(train_tensor[:,0])
+
+    print("Making TensorDatasets with the scaled features and labels")
+    train_dataset = TensorDataset(feature_scaler.scale(train_tensor[:,1:]), label_scaler.scale(train_tensor[:,0]).unsqueeze(-1))
+    val_dataset = TensorDataset(feature_scaler.scale(val_tensor[:,1:]), label_scaler.scale(val_tensor[:,0]).unsqueeze(-1))
+    test_dataset = TensorDataset(feature_scaler.scale(test_tensor[:,1:]), label_scaler.scale(test_tensor[:,0]).unsqueeze(-1))
+
+    print("Saving ...")
+    pt.save(train_dataset, join(DATA_PATH, "train_dataset.pt"))
+    pt.save(val_dataset, join(DATA_PATH, "val_dataset.pt"))
+    pt.save(test_dataset, join(DATA_PATH, "test_dataset.pt"))
+    print("Done! \n")
+
+
+def reshape_data(x, y, pressure_data):
+    print("Reshaping ...")
+    rows = pressure_data.shape[0] * pressure_data.shape[1]
+    cols = 4
+    pts_per_timestep = x.shape[0]
+    time_steps = pressure_data.shape[1]
+    
+    pressure_data_resh = pressure_data.reshape([rows, 1]).squeeze()
+
+    tensor = pt.zeros((rows, cols))
+    for time_step in range(time_steps):
+        start, end = time_step*pts_per_timestep, (time_step+1)*pts_per_timestep
+        tensor[start:end, 1] = x
+        tensor[start:end, 2] = y
+        tensor[start:end, 3] = time_step%config.time_steps_per_cond
+    tensor[:, 0] = pressure_data_resh
+
+    print("Shape of data tensor:                ", tensor.shape, "\n")
+    return tensor
+
 if __name__ == "__main__":
     # preprocessing functions that interpolate coords from (465 x 159) to (256 x 128) and create a subset of the full dataset
     # interpolate_coords()
-    make_data_subset()
+    # make_data_subset()
+    preprocessing()
