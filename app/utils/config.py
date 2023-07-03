@@ -11,6 +11,7 @@
 
 time_steps_per_cond = 500
 target_resolution = (256, 128)
+target_tensor_shape = (256, 128, 500)
 
 
 test_keys = ['ma0.84_alpha3.00', 'ma0.84_alpha5.00']

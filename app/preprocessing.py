@@ -19,11 +19,8 @@ import matplotlib.pyplot as plt
 
 
 DATA_PATH = Path(os.path.abspath('')) / "data"
-TARGET_SHAPE_SLICE = (256, 128)
-TARGET_SHAPE_TENSOR = (256, 128, 500)
 
 # DATASET
-# 13 combinations of Ma and alpha:
 #
 # Ma: 0.84 - alpha:  1.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0
 # Ma: 0.90 - alpha: -2.5, 1.5, 2.5, 4.0, 5.0, 6.0
@@ -40,58 +37,6 @@ def load_data(filename: str) -> pt.Tensor:
         pt.Tensor: Data Tensor
     """
     data = pt.load(join(DATA_PATH, filename))
-    return data
-
-
-def reshape_data_depr(x: pt.Tensor, y: pt.Tensor, cp: dict, cases: dict) -> pt.Tensor:  
-    """Reshapes all of the data into the desired shape for the models
-
-    Args:
-        x (pt.Tensor): x-coordinates array
-        y (pt.Tensor): y-coordinates array
-        cp (dict): time dependant pressure data
-        cases (dict): dict with the case names as keys and the filtered Ma and alpha as vals
-
-    Returns:
-        pt.Tensor: Fully assembled data tensor
-    """
-    print("Reshaping data")
-    # Extract information about the data dimesnions
-    dataset_len = sum([val.numel() for _, val in cp.items()])
-    keys = list(cp.keys())
-    vals_per_step = cp[keys[0]].shape[0]*cp[keys[0]].shape[1]
-    num_timesteps = cp[keys[0]].shape[2]
-
-    # clone x and y by the amount of timesteps to achieve desired dimension
-    x = np.tile(x, (num_timesteps,))
-    y = np.tile(y, (num_timesteps,))
-
-    # creating array with timesteps 
-    t = np.zeros((cp[keys[0]].numel(),))
-    for step in range(1, num_timesteps):
-        t1, t2= step*vals_per_step, (step+1)*vals_per_step
-        t[t1:t2] = step
-
-    # Create the data tensor in 16bit float format
-    data = np.zeros((dataset_len, 6), dtype=np.float32)
-
-    # Loop over Ma-alpha confs
-    for i, (key, vals) in enumerate(cp.items()):
-        # start and end indices for current conf in data tensor
-        start, end = i*vals.numel(), (i+1)*vals.numel()
-   
-        # assigning data to corresponding tensor column
-        data[start:end, 0] = x
-        data[start:end, 1] = y
-        data[start:end, 2] = np.full((vals.numel(),), cases[key][0])
-        data[start:end, 3] = np.full((vals.numel(),), cases[key][1])
-        data[start:end, 4] = t
-        data[start:end, 5] = np.reshape(vals, (vals.numel(), 1)).squeeze()
-
-    print("Dataset shape     =", data.shape)
-    print("Dataset size      =", data.nbytes /1e+9, "GB \n")
-
-    print("Data reshaped")
     return data
 
 
@@ -112,81 +57,17 @@ def get_coords() -> tuple[pt.Tensor, pt.Tensor]:
     
     return x, y
 
-def get_cp_and_cases(cp_filename: str) -> tuple[pt.Tensor, dict]:
-    """Load the raw cp data and extract the Ma and alpha
-
-    Returns:
-        tuple[pt.Tensor, dict]: cp tensor and dict with the case names as keys and the filtered Ma and alpha as vals
-    """
-    print("Loading cp data")
-    # Load the cp data
-    cp = load_data(cp_filename)
-
-    # Get the conf names
-    keys = list(cp.keys())
-
-    # discard 75% of the snapshots for now
-    cp[keys[0]], _ = cp[keys[0]].split([500, 1500], dim=2)
-    print(cp[keys[0]].shape)
-    cp[keys[1]], _ = cp[keys[1]].split([500, 1500], dim=2)
-    print(cp[keys[1]].shape)
-
-    # Delete the "ma" and "_alpha" from the keys and convert to float
-    cases = [key.replace("ma", "").replace("_alpha", "") for key in list(cp.keys())]
-    cases_dict = {keys[i]: [float(case[:4]), float(case[4:])] for i, case in enumerate(cases)}
-
-    return cp, cases_dict
-
-
-def split_scale_save(df: pd.DataFrame, train_size: float, val_size: float, test_size: float):
-    """Split the data into training, validation and testing data
-
-    Args:
-        df (pd.DataFrame): Dataframe
-        train_size (float): Size of training data
-        val_size (float): Size of validation data
-        test_size (float): Size of testing data
-    """
-    # Split the data into training, validation and testing data
-    val_end = train_size + val_size
-    n = len(df)
-
-    print("Splitting data")
-    df_train = df[0:int(train_size*n)]
-    df_val = df[int(train_size*n):int(val_end*n)]
-    df_test = df[int(val_end*n):]
-
-    # Train MinMaxScaler on training data
-    print("Fitting MinMaxScaler on training data")
-    scaler = MinMaxScaler()
-    scaler.fit(df_train)
-
-    # Scale subsets with the fitted scaler
-    print("Scaling datasets with the fitted scaler")
-    df_train[df_train.columns] = scaler.transform(df_train[df_train.columns])
-    df_val[df_val.columns] = scaler.transform(df_val[df_val.columns])
-    df_test[df_test.columns] = scaler.transform(df_test[df_test.columns])
-
-    # Save the training, validation and testing data
-    print("Saving training, validation and testing data to csv files")
-    df_train.to_csv(join(DATA_PATH, "train.csv"), index=False)
-    df_val.to_csv(join(DATA_PATH, "val.csv"), index=False)
-    df_test.to_csv(join(DATA_PATH, "test.csv"), index=False)
-
-    return df_train, df_val, df_test
-
 
 def make_data_subset(Ma: str = "0.84"):
     """From the original dataset, create a subset with a reduced number of snapshots, for only one Ma number and with interpolated data
 
     Args:
-        Ma (str, optional): Ma number that should be included in the dataset. Defaults to "0.84".+
+        Ma (str, optional): Ma number that should be included in the dataset. Defaults to "0.84".
         num_snapshots (int, optional): Number of snapshots that should be included in the dataset. Defaults to 500.
     """
     # load dataset and extract keys
     cp = load_data("cp_clean.pt")
     keys = list(cp.keys())
-
 
     for key in keys:
         # if the desired Ma number is not in the key, it will be removed
@@ -197,7 +78,7 @@ def make_data_subset(Ma: str = "0.84"):
         # otherwise, it will be kept and interpolated
         else:
             print(key, " will be kept and interpolated")
-            cp[key] = interpolate_tensor(data_tensor=cp[key][:,:,:TARGET_SHAPE_TENSOR[2]])
+            cp[key] = interpolate_tensor(data_tensor=cp[key][:,:,:config.target_tensor_shape[2]])
 
     # save the data subset
     print("Saving data subset ...")
@@ -216,8 +97,8 @@ def interpolate_coords():
     print("Original coordinate shape:       ", xx.shape)
 
     print("Interpolating ...")
-    xx_new = interpolate(xx.unsqueeze(0).unsqueeze(0), size=TARGET_SHAPE_SLICE, mode="bilinear", align_corners=False).squeeze()
-    yy_new = interpolate(yy.unsqueeze(0).unsqueeze(0), size=TARGET_SHAPE_SLICE, mode="bilinear", align_corners=False).squeeze()
+    xx_new = interpolate(xx.unsqueeze(0).unsqueeze(0), size=config.target_resolution, mode="bilinear", align_corners=False).squeeze()
+    yy_new = interpolate(yy.unsqueeze(0).unsqueeze(0), size=config.target_resolution, mode="bilinear", align_corners=False).squeeze()
     print("Interpolated coordinate shape:   ", xx_new.shape)
     
     print("Saving ...")
@@ -238,63 +119,47 @@ def interpolate_tensor(data_tensor: pt.Tensor) -> pt.Tensor:
     print("Original tensor shape:           ", data_tensor.shape)
 
     # initialize new tensor with desired shape
-    data_tensor_interp = pt.empty(TARGET_SHAPE_TENSOR)
+    data_tensor_interp = pt.empty(config.target_tensor_shape)
 
     print("Interpolating ...")
     # loop over each timestep to interpolate the data
     for timestep in range(data_tensor.shape[2]):
-        data_tensor_interp[:,:,timestep] = interpolate(data_tensor[:, :, timestep].unsqueeze(0).unsqueeze(0), size=TARGET_SHAPE_SLICE, mode="bilinear", align_corners=False).squeeze()
+        data_tensor_interp[:,:,timestep] = interpolate(data_tensor[:, :, timestep].unsqueeze(0).unsqueeze(0), size=config.target_resolution, mode="bilinear", align_corners=False).squeeze()
 
     print("Interpolated tensor shape:       ", data_tensor_interp.shape, "\n")
     return data_tensor_interp
 
 
 def preprocessing():
-    # load interpolated dataset
+    """Loads interpolated dataset and coordinates and turns them into TensorDatasets
+    """
+
+    # load interpolated dataset and interpolated coords
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
     coords = pt.load(join(DATA_PATH, "coords_interp.pt"))
-    grid_size = config.target_resolution[0] * config.target_resolution[1]
     xx, yy = coords
-    print("Grid shape:                  ", xx.shape)
 
-    x = xx.reshape([grid_size, 1]).squeeze()
-    y = yy.reshape([grid_size, 1]).squeeze()
+    # flatten coordinate grids to arrays
+    x = xx.flatten(0, 1)
+    y = yy.flatten(0, 1)
+    print("Grid shape:                  ", xx.shape)
     print("Reshaped grid size:          ", x.shape)
 
-    # identify keys for train data inside data dict
-    train_keys = [key for key in list(data.keys()) if key not in config.test_keys]
-    split_index = int(config.train_split)
+    # split and reshape the data
+    train_tensor, val_tensor, test_tensor = split_and_reshape(data, x, y)
 
-    train_data = data[train_keys[0]][:, :, :split_index].flatten(0, 1)
-    val_data = data[train_keys[0]][:, :, split_index:].flatten(0, 1)
-
-    for train_key in train_keys[1:]:
-        train_split = data[train_key][:, :, :split_index]
-        val_split = data[train_key][:, :, split_index:]
-        train_data = pt.concat((train_data, train_split.flatten(0, 1)), dim=1)
-        val_data = pt.concat((val_data, val_split.flatten(0, 1)), dim=1)
-
-    print("Shape of train pressure data:        ", train_data.shape)
-    train_tensor = reshape_data(x, y, train_data, "train")
-
-    print("Shape of validation pressure data:   ", val_data.shape)
-    val_tensor = reshape_data(x, y, val_data, "val")
-
-    test_data = data[config.test_keys[0]].flatten(0, 1)
-    for test_key in config.test_keys[1:]:
-        test_data = pt.concat((test_data, data[test_key].flatten(0, 1)), dim=1)
-    print("Shape of test pressure data:         ", test_data.shape)
-    test_tensor = reshape_data(x, y, test_data, "test")
-
+    # fit a Standard-scaler on the training data
     print("Fitting Scaler on training data")
     feature_scaler = StandardScaler().fit(train_tensor[:,1:])
     label_scaler = StandardScaler().fit(train_tensor[:,0])
 
+    # scale all tensors and store them in TensorDataset objects
     print("Making TensorDatasets with the scaled features and labels")
     train_dataset = TensorDataset(feature_scaler.scale(train_tensor[:,1:]), label_scaler.scale(train_tensor[:,0]).unsqueeze(-1))
     val_dataset = TensorDataset(feature_scaler.scale(val_tensor[:,1:]), label_scaler.scale(val_tensor[:,0]).unsqueeze(-1))
     test_dataset = TensorDataset(feature_scaler.scale(test_tensor[:,1:]), label_scaler.scale(test_tensor[:,0]).unsqueeze(-1))
 
+    # save all datasets
     print("Saving ...")
     pt.save(train_dataset, join(DATA_PATH, "train_dataset.pt"))
     pt.save(val_dataset, join(DATA_PATH, "val_dataset.pt"))
@@ -302,17 +167,70 @@ def preprocessing():
     print("Done! \n")
 
 
-def reshape_data(x, y, pressure_data, type):
-    print("Reshaping ...")
+def split_and_reshape(data: pt.Tensor, x: pt.Tensor, y: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
+    """split the pressure data into train, val and test and reshape them into the appropriate tensor shape
+    """
+    # identify flow conditions for training and get the split index of the training data for validation
+    train_keys = [key for key in list(data.keys()) if key not in config.test_keys]
+    split_index = int(config.train_split)
 
+    # initialize train and validation data tensors
+    train_data = data[train_keys[0]][:, :, :split_index].flatten(0, 1)
+    val_data = data[train_keys[0]][:, :, split_index:].flatten(0, 1)
+
+    # iterate over training flow conditions, split the training data into train and validation and concatenate
+    for train_key in train_keys[1:]:
+        train_split = data[train_key][:, :, :split_index]
+        val_split = data[train_key][:, :, split_index:]
+        train_data = pt.concat((train_data, train_split.flatten(0, 1)), dim=1)
+        val_data = pt.concat((val_data, val_split.flatten(0, 1)), dim=1)
+
+    # reshape into tensor with the appropriate shape including x, y and timesteps
+    print("Shape of train pressure data:        ", train_data.shape)
+    train_tensor = reshape_data(x, y, train_data, "train")
+
+    # reshape into tensor with the appropriate shape including x, y and timesteps
+    print("Shape of validation pressure data:   ", val_data.shape)
+    val_tensor = reshape_data(x, y, val_data, "val")
+
+    # iterate over test flow conditions and concatenate
+    test_data = data[config.test_keys[0]].flatten(0, 1)
+    for test_key in config.test_keys[1:]:
+        test_data = pt.concat((test_data, data[test_key].flatten(0, 1)), dim=1)
+
+    # reshape into tensor with the appropriate shape including x, y and timesteps
+    print("Shape of test pressure data:         ", test_data.shape)
+    test_tensor = reshape_data(x, y, test_data, "test")
+
+    return train_tensor, val_tensor, test_tensor
+
+
+def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str) -> pt.Tensor:
+    """Reshape pressure data and coordinate arrays into a data tensor with timesteps
+
+    Args:
+        x (pt.Tensor): x-coordinates flattened
+        y (pt.Tensor): y-coordinates flattened
+        pressure_data (pt.Tensor): time-resolved pressure data
+        type (str): type of tensor regarding training, validation or testing
+
+    Returns:
+        pt.Tensor: reshaped n x (cp, x, y, t) tensor
+    """
+    print("Reshaping ...")
+    # initialize parameters for tensor construction
     rows = pressure_data.shape[0] * pressure_data.shape[1]
     cols = 4
     pts_per_timestep = x.shape[0]
     time_steps = pressure_data.shape[1]
     
+    # flatten pressure data
     pressure_data_resh = pressure_data.reshape([rows, 1]).squeeze()
 
+    # initialize tensor
     tensor = pt.zeros((rows, cols))
+
+    # assign data to the tensor
     for time_step in range(time_steps):
         start, end = time_step*pts_per_timestep, (time_step+1)*pts_per_timestep
         tensor[start:end, 1] = x
@@ -326,14 +244,12 @@ def reshape_data(x, y, pressure_data, type):
         else:
             # timesteps ranging from 000-499
             tensor[start:end, 3] = time_step % config.time_steps_per_cond
-
     tensor[:, 0] = pressure_data_resh
 
     print("Shape of data tensor:                ", tensor.shape, "\n")
     return tensor
 
 if __name__ == "__main__":
-    # preprocessing functions that interpolate coords from (465 x 159) to (256 x 128) and create a subset of the full dataset
     # interpolate_coords()
     # make_data_subset()
     preprocessing()
