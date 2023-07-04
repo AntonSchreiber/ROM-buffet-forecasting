@@ -162,9 +162,9 @@ def autoencoder_preprocessing():
     # print("mean of test_cp:     ", cp_scaler.scale(test_cp).mean().item())
     # print("std of test_cp:      ", cp_scaler.scale(test_cp).std().item())
 
-    train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp), yy, xx)
-    val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp), yy, xx)
-    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp), yy, xx)
+    train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
+    val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp))
+    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))
 
     # save all datasets
     print("Saving ...")

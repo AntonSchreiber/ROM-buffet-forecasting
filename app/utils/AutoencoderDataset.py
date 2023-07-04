@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 
 
 class AutoencoderDataset(Dataset):
-    def __init__(self, cp: pt.Tensor, yy: pt.Tensor, xx: pt.Tensor) -> None:
+    def __init__(self, cp: pt.Tensor) -> None:
         """Custom dataset class for surface pressure datasets to train a convolutional autoencoder
 
         Args:
@@ -12,8 +12,8 @@ class AutoencoderDataset(Dataset):
             xx (pt.Tensor): x-coordinates of pressure data of shape (height, width)
         """
         self.cp = cp
-        self.yy = yy
-        self.xx = xx
+        #self.yy = yy
+        #self.xx = xx
 
     def __getitem__(self, index: int) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
         """Retrieves the surface pressure image, x mesh and y mesh at the given index
@@ -25,9 +25,10 @@ class AutoencoderDataset(Dataset):
             tuple[pt.Tensor, pt.Tensor, pt.Tensor]: A tuple containing the surface pressure image, x mesh and y mesh as torch tensors
         """
         surface_pressure_image = self.cp[:, :, index].unsqueeze(0) # Add a channel dimension
-        yy = self.yy
-        xx = self.xx
-        return surface_pressure_image, yy, xx
+        #yy = self.yy
+        #xx = self.xx
+        return surface_pressure_image #, yy, xx
+    
     def __len__(self) -> int:
         """Returns the total number of samples/ timesteps in the dataset
 
@@ -35,3 +36,17 @@ class AutoencoderDataset(Dataset):
             int: The number of samples or timesteps in the dataset
         """
         return self.cp.shape[2]
+    
+    def astype(self, dtype: pt.dtype):
+        """Converts the dataset tensors to the specified data type
+
+        Args:
+            dtype (pt.dtype): The desired data type for tensors
+
+        Returns:
+            AutoencoderDataset: The dataset object with the converted tensors
+        """
+        self.xx = self.xx.to(dtype)
+        self.yy = self.yy.to(dtype)
+        self.cp = self.cp.to(dtype)
+        return self
