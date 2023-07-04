@@ -58,20 +58,10 @@ if __name__ == "__main__":
     # optimizer
     optimizer = pt.optim.Adam(autoencoder.parameters(), lr=config.learning_rate)
 
-    # define score functions
-    score_funcs = {
-        "Lmax"  : metrics.max_error,
-        "L1"    : metrics.mean_absolute_error,
-        "R2"    : metrics.r2_score
-    }
-
     test_result = train_cnn_vae(
         model=autoencoder,
         loss_func=nn.MSELoss(),
         train_loader=train_loader,
-        val_loader=val_loader,
-        test_loader=test_loader,
-        score_funcs=score_funcs,
         epochs=config.epochs,
         optimizer=optimizer
 )

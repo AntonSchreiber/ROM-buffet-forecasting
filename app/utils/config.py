@@ -23,9 +23,9 @@ val_split = 50
 # Model parameters
 ########################################################
 
-epochs = 500
+epochs = 10
 batch_size = 32
-learning_rate = 0.001
+learning_rate = 1e-4
 min_loss = 1.05e5
 
 
