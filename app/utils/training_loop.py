@@ -9,7 +9,7 @@ from sklearn import metrics
 import pandas as pd
 
 
-def run_epoch(
+def run_epoch_cnn_vae(
     model: pt.nn.Module,
     optimizer: pt.optim.Optimizer,
     data_loader: pt.utils.data.DataLoader,
@@ -32,10 +32,12 @@ def run_epoch(
     start_time = time()
 
     # loop over all batches
-    for features, labels in data_loader:
-        features, labels = features.to(device), labels.to(device)
-        pred = model(features)
-        loss = loss_func(labels, pred)
+    for surface_data in data_loader:
+        surface_data = surface_data.to(device)
+
+        pred = model(surface_data)
+        loss = loss_func(surface_data, pred)
+
         if model.training:
             loss.backward()
             optimizer.step()
@@ -44,7 +46,7 @@ def run_epoch(
 
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
-            labels_true.extend(labels.detach().cpu().tolist())
+            labels_true.extend(surface_data.detach().cpu().tolist())
             labels_pred.extend(pred.detach().cpu().tolist())
 
     # keep track of performance
@@ -194,7 +196,7 @@ def train_cnn_vae(
     for e in range(epochs):
         # model update
         model = model.train()
-        total_train_time += run_epoch(
+        total_train_time += run_epoch_cnn_vae(
             model, optimizer, train_loader, loss_func, device,
             results, score_funcs, prefix="train"
         )
@@ -207,7 +209,7 @@ def train_cnn_vae(
         if val_loader is not None:
             model = model.eval()
             with pt.no_grad():
-                _ = run_epoch(
+                _ = run_epoch_cnn_vae(
                     model, optimizer, val_loader, loss_func, device,
                     results, score_funcs, prefix="val"
                 )
@@ -224,7 +226,7 @@ def train_cnn_vae(
         if test_loader is not None:
             model = model.eval()
             with pt.no_grad():
-                _ = run_epoch(
+                _ = run_epoch_cnn_vae(
                     model, optimizer, test_loader, loss_func, device,
                     results, score_funcs, prefix="test"
                 )

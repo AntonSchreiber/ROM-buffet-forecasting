@@ -6,7 +6,8 @@ if app_dir not in sys.path:
       sys.path.append(app_dir)
 
 from utils import config
-from utils.StandardScaler import StandardScaler
+from utils.Scaler import StandardScaler, MinMaxScaler
+from utils.AutoencoderDataset import AutoencoderDataset
 from pathlib import Path
 from os.path import join
 import torch as pt
@@ -130,34 +131,40 @@ def interpolate_tensor(data_tensor: pt.Tensor) -> pt.Tensor:
     return data_tensor_interp
 
 
-def preprocessing():
+def autoencoder_preprocessing():
     """Loads interpolated dataset and coordinates and turns them into TensorDatasets
     """
+    print("Creating custom autoencoder datasets from surface pressure data and coordinate meshes ...")
 
     # load interpolated dataset and interpolated coords
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
     coords = pt.load(join(DATA_PATH, "coords_interp.pt"))
     xx, yy = coords
-
-    # flatten coordinate grids to arrays
-    x = xx.flatten(0, 1)
-    y = yy.flatten(0, 1)
     print("Grid shape:                  ", xx.shape)
-    print("Reshaped grid size:          ", x.shape)
 
     # split and reshape the data
-    train_tensor, val_tensor, test_tensor = split_and_reshape(data, x, y)
+    train_cp, val_cp, test_cp = split(data)
 
     # fit a Standard-scaler on the training data
     print("Fitting Scaler on training data")
-    feature_scaler = StandardScaler().fit(train_tensor[:,1:])
-    label_scaler = StandardScaler().fit(train_tensor[:,0])
+    xx_scaler = MinMaxScaler().fit(xx)
+    yy_scaler = MinMaxScaler().fit(yy)
+    cp_scaler = StandardScaler().fit(train_cp)
 
-    # scale all tensors and store them in TensorDataset objects
-    print("Making TensorDatasets with the scaled features and labels")
-    train_dataset = TensorDataset(feature_scaler.scale(train_tensor[:,1:]), label_scaler.scale(train_tensor[:,0]).unsqueeze(-1))
-    val_dataset = TensorDataset(feature_scaler.scale(val_tensor[:,1:]), label_scaler.scale(val_tensor[:,0]).unsqueeze(-1))
-    test_dataset = TensorDataset(feature_scaler.scale(test_tensor[:,1:]), label_scaler.scale(test_tensor[:,0]).unsqueeze(-1))
+    # scale all tensors and create custom Datasets
+    print("Making AutoencoderDatasets with the scaled features and labels")
+    xx = xx_scaler.scale(xx)
+    yy = yy_scaler.scale(yy)
+    # print("mean of train_cp:    ", cp_scaler.scale(train_cp).mean().item())
+    # print("std of train_cp:     ", cp_scaler.scale(train_cp).std().item())
+    # print("mean of val_cp:      ", cp_scaler.scale(val_cp).mean().item())
+    # print("std of val_cp:       ", cp_scaler.scale(val_cp).std().item())
+    # print("mean of test_cp:     ", cp_scaler.scale(test_cp).mean().item())
+    # print("std of test_cp:      ", cp_scaler.scale(test_cp).std().item())
+
+    train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp), yy, xx)
+    val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp), yy, xx)
+    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp), yy, xx)
 
     # save all datasets
     print("Saving ...")
@@ -167,42 +174,36 @@ def preprocessing():
     print("Done! \n")
 
 
-def split_and_reshape(data: pt.Tensor, x: pt.Tensor, y: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
-    """split the pressure data into train, val and test and reshape them into the appropriate tensor shape
+def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
+    """split the pressure data into train, val and test
     """
+
     # identify flow conditions for training and get the split index of the training data for validation
     train_keys = [key for key in list(data.keys()) if key not in config.test_keys]
     split_index = int(config.train_split)
 
     # initialize train and validation data tensors
-    train_data = data[train_keys[0]][:, :, :split_index].flatten(0, 1)
-    val_data = data[train_keys[0]][:, :, split_index:].flatten(0, 1)
+    train_cp = data[train_keys[0]][:, :, :split_index]
+    val_cp = data[train_keys[0]][:, :, split_index:]
 
     # iterate over training flow conditions, split the training data into train and validation and concatenate
     for train_key in train_keys[1:]:
         train_split = data[train_key][:, :, :split_index]
         val_split = data[train_key][:, :, split_index:]
-        train_data = pt.concat((train_data, train_split.flatten(0, 1)), dim=1)
-        val_data = pt.concat((val_data, val_split.flatten(0, 1)), dim=1)
+        train_cp = pt.concat((train_cp, train_split), dim=2)
+        val_cp = pt.concat((val_cp, val_split), dim=2)
 
-    # reshape into tensor with the appropriate shape including x, y and timesteps
-    print("Shape of train pressure data:        ", train_data.shape)
-    train_tensor = reshape_data(x, y, train_data, "train")
-
-    # reshape into tensor with the appropriate shape including x, y and timesteps
-    print("Shape of validation pressure data:   ", val_data.shape)
-    val_tensor = reshape_data(x, y, val_data, "val")
+    print("Shape of training cp:    ", train_cp.shape)
+    print("Shape of val cp:         ", val_cp.shape)
 
     # iterate over test flow conditions and concatenate
-    test_data = data[config.test_keys[0]].flatten(0, 1)
+    test_cp = data[config.test_keys[0]]
     for test_key in config.test_keys[1:]:
-        test_data = pt.concat((test_data, data[test_key].flatten(0, 1)), dim=1)
+        test_cp = pt.concat((test_cp, data[test_key]), dim=2)
+    
+    print("Shape of test cp:        ", test_cp.shape)
 
-    # reshape into tensor with the appropriate shape including x, y and timesteps
-    print("Shape of test pressure data:         ", test_data.shape)
-    test_tensor = reshape_data(x, y, test_data, "test")
-
-    return train_tensor, val_tensor, test_tensor
+    return train_cp, val_cp, test_cp
 
 
 def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str) -> pt.Tensor:
@@ -252,4 +253,4 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
-    preprocessing()
+    autoencoder_preprocessing()
