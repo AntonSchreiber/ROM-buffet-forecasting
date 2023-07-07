@@ -8,26 +8,19 @@ class AutoencoderDataset(Dataset):
 
         Args:
             pressure_data (pt.Tensor): surface pressure data ("images")
-            yy (pt.Tensor): y-coordinates of pressure data of shape (height, width)
-            xx (pt.Tensor): x-coordinates of pressure data of shape (height, width)
         """
         self.cp = cp
-        #self.yy = yy
-        #self.xx = xx
 
     def __getitem__(self, index: int) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
-        """Retrieves the surface pressure image, x mesh and y mesh at the given index
+        """Retrieves the surface pressure image at the given index
 
         Args:
             index (int): The index of the sample to retrieve
 
         Returns:
-            tuple[pt.Tensor, pt.Tensor, pt.Tensor]: A tuple containing the surface pressure image, x mesh and y mesh as torch tensors
+            pt.Tensor: A surface pressure image with [1, height, width]
         """
-        surface_pressure_image = self.cp[:, :, index].unsqueeze(0) # Add a channel dimension
-        #yy = self.yy
-        #xx = self.xx
-        return surface_pressure_image #, yy, xx
+        return self.cp[:, :, index].unsqueeze(0) # Add a channel dimension
     
     def __len__(self) -> int:
         """Returns the total number of samples/ timesteps in the dataset
@@ -36,17 +29,3 @@ class AutoencoderDataset(Dataset):
             int: The number of samples or timesteps in the dataset
         """
         return self.cp.shape[2]
-    
-    def astype(self, dtype: pt.dtype):
-        """Converts the dataset tensors to the specified data type
-
-        Args:
-            dtype (pt.dtype): The desired data type for tensors
-
-        Returns:
-            AutoencoderDataset: The dataset object with the converted tensors
-        """
-        self.xx = self.xx.to(dtype)
-        self.yy = self.yy.to(dtype)
-        self.cp = self.cp.to(dtype)
-        return self
