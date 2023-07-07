@@ -176,23 +176,38 @@ def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
     split_index = int(config.train_split)
 
     # initialize train and validation data tensors
-    train_cp = data[train_keys[0]][:, :, :split_index]
-    val_cp = data[train_keys[0]][:, :, split_index:]
+    if config.mini_datset:
+        train_cp = data[train_keys[0]][:, :, :config.mini_train_per_cond]
+        val_cp = data[train_keys[0]][:, :, split_index:(split_index + config.mini_val_per_cond)]
+    else:
+        train_cp = data[train_keys[0]][:, :, :split_index]
+        val_cp = data[train_keys[0]][:, :, split_index:]
 
     # iterate over training flow conditions, split the training data into train and validation and concatenate
     for train_key in train_keys[1:]:
         train_split = data[train_key][:, :, :split_index]
         val_split = data[train_key][:, :, split_index:]
-        train_cp = pt.concat((train_cp, train_split), dim=2)
-        val_cp = pt.concat((val_cp, val_split), dim=2)
+        if config.mini_datset:
+            train_cp = pt.concat((train_cp, train_split[:, :, :config.mini_train_per_cond]), dim=2)
+            val_cp = pt.concat((val_cp, val_split[:, :, :config.mini_val_per_cond]), dim=2)
+        else:
+            train_cp = pt.concat((train_cp, train_split), dim=2)
+            val_cp = pt.concat((val_cp, val_split), dim=2)
 
     print("Shape of training cp:    ", train_cp.shape)
     print("Shape of val cp:         ", val_cp.shape)
 
     # iterate over test flow conditions and concatenate
-    test_cp = data[config.test_keys[0]]
+    if config.mini_datset:
+        test_cp = data[config.test_keys[0]][:, :, :config.mini_test_per_cond]
+    else:
+        test_cp = data[config.test_keys[0]]
+
     for test_key in config.test_keys[1:]:
-        test_cp = pt.concat((test_cp, data[test_key]), dim=2)
+        if config.mini_datset:
+            test_cp = pt.concat((test_cp, data[test_key][:, :, :config.mini_test_per_cond]), dim=2)
+        else:
+            test_cp = pt.concat((test_cp, data[test_key]), dim=2)
     
     print("Shape of test cp:        ", test_cp.shape)
 
