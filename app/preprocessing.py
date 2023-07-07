@@ -136,25 +136,18 @@ def autoencoder_preprocessing():
     """
     print("Creating custom autoencoder datasets from surface pressure data and coordinate meshes ...")
 
-    # load interpolated dataset and interpolated coords
+    # load interpolated dataset
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
-    coords = pt.load(join(DATA_PATH, "coords_interp.pt"))
-    xx, yy = coords
-    print("Grid shape:                  ", xx.shape)
 
     # split and reshape the data
     train_cp, val_cp, test_cp = split(data)
 
     # fit a Standard-scaler on the training data
     print("Fitting Scaler on training data")
-    xx_scaler = MinMaxScaler().fit(xx)
-    yy_scaler = MinMaxScaler().fit(yy)
     cp_scaler = StandardScaler().fit(train_cp)
 
     # scale all tensors and create custom Datasets
-    print("Making AutoencoderDatasets with the scaled features and labels")
-    xx = xx_scaler.scale(xx)
-    yy = yy_scaler.scale(yy)
+    print("Making AutoencoderDatasets with the scaled cp")
     # print("mean of train_cp:    ", cp_scaler.scale(train_cp).mean().item())
     # print("std of train_cp:     ", cp_scaler.scale(train_cp).std().item())
     # print("mean of val_cp:      ", cp_scaler.scale(val_cp).mean().item())
@@ -203,7 +196,10 @@ def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
     
     print("Shape of test cp:        ", test_cp.shape)
 
-    return train_cp, val_cp, test_cp
+    if config.mini_datset:
+        return train_cp[:,:,:10], val_cp[:,:,:2], test_cp[:,:,:2]
+    else:
+        return train_cp, val_cp, test_cp
 
 
 def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str) -> pt.Tensor:

@@ -19,6 +19,8 @@ num_train_flow_conds = 5
 train_split = 450
 val_split = 50
 
+mini_datset = True
+
 ########################################################
 # Model parameters
 ########################################################
