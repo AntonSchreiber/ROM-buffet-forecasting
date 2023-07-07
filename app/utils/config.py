@@ -28,9 +28,10 @@ mini_test_per_cond = 2
 # Model parameters
 ########################################################
 
-epochs = 500
+epochs = 150
 batch_size = 8
-learning_rate = 1e-4
+learning_rate = 2e-4
+lr_factor = 0.2
 min_loss = 1.05e5
 
 

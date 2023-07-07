@@ -38,6 +38,7 @@ class ConvEncoder(nn.Module):
                  n_latent: int,
                  activation: Callable=F.relu,
                  batchnorm: bool = False,
+                 layernorm: bool = False,
                  variational: bool = False
                  ):
         """Create a convolutional encoder instance.
@@ -67,6 +68,7 @@ class ConvEncoder(nn.Module):
         self._n_latent = n_latent
         self._activation = activation
         self._batchnorm = batchnorm
+        self._layernorm = layernorm
         self._variational = variational
 
         # check input dimensions
@@ -82,6 +84,9 @@ class ConvEncoder(nn.Module):
             )
             if self._batchnorm:
                 self._layers.append(nn.BatchNorm2d(self._n_channels[i+1]))
+            elif self._layernorm:
+                current_size = [s//2**(i+1) for s in in_size]
+                self._layers.append(nn.LayerNorm([self._n_channels[i+1], current_size[0], current_size[1]]))
 
         # add fully-connected layer after last convolution
         # these formulas only hold if kernel size and stride are kept at two
@@ -121,6 +126,7 @@ class ConvDecoder(nn.Module):
                  n_latent: int,
                  activation: Callable=F.relu,
                  batchnorm: bool = False,
+                 layernorm: bool = False,
                  squash_output: bool = False
                  ):
         """Create a convolutional decoder instance.
@@ -150,6 +156,7 @@ class ConvDecoder(nn.Module):
         self._n_latent = n_latent
         self._activation = activation
         self._batchnorm = batchnorm
+        self._layernorm = layernorm
         self._squash_output = squash_output
 
         # create fully-connected layer as adapter between latent
@@ -168,6 +175,9 @@ class ConvDecoder(nn.Module):
             )
             if self._batchnorm:
                 self._layers.append(nn.BatchNorm2d(self._n_channels[i+1]))
+            elif self._layernorm:
+                current_size = [s * 2**(i+1) for s in self._first_size]
+                self._layers.append(nn.LayerNorm([self._n_channels[i+1], current_size[0], current_size[1]]))
         
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

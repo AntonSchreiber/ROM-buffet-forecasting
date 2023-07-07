@@ -6,7 +6,7 @@ if app_dir not in sys.path:
       sys.path.append(app_dir)
 
 from utils import config
-from utils.Scaler import StandardScaler, MinMaxScaler
+from utils.Scaler import StandardScaler, MinMaxScaler_0_1, MinMaxScaler_1_1
 from utils.AutoencoderDataset import AutoencoderDataset
 from pathlib import Path
 from os.path import join
@@ -144,7 +144,7 @@ def autoencoder_preprocessing():
 
     # fit a Standard-scaler on the training data
     print("Fitting Scaler on training data")
-    cp_scaler = StandardScaler().fit(train_cp)
+    cp_scaler = MinMaxScaler_1_1().fit(train_cp)
 
     # scale all tensors and create custom Datasets
     print("Making AutoencoderDatasets with the scaled cp")
