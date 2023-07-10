@@ -20,16 +20,16 @@ train_split = 450
 val_split = 50
 
 mini_datset = True
-mini_train_per_cond = 10
+mini_train_per_cond = 100
 mini_val_per_cond = 1
-mini_test_per_cond = 2
+mini_test_per_cond = 1
 
 ########################################################
 # Model parameters
 ########################################################
 
-epochs = 150
-batch_size = 8
+epochs = 500
+batch_size = 32
 learning_rate = 2e-4
 lr_factor = 0.2
 min_loss = 1.05e5

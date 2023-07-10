@@ -157,7 +157,7 @@ def autoencoder_preprocessing():
 
     train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
     val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp))
-    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))
+    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))    
 
     # save all datasets
     print("Saving ...")
@@ -211,10 +211,7 @@ def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
     
     print("Shape of test cp:        ", test_cp.shape)
 
-    if config.mini_datset:
-        return train_cp[:,:,:10], val_cp[:,:,:2], test_cp[:,:,:2]
-    else:
-        return train_cp, val_cp, test_cp
+    return train_cp, val_cp, test_cp
 
 
 def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str) -> pt.Tensor:
