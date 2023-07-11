@@ -20,9 +20,9 @@ train_split = 450
 val_split = 50
 
 mini_datset = True
-mini_train_per_cond = 5
-mini_val_per_cond = 1
-mini_test_per_cond = 1
+mini_train_per_cond = 20
+mini_val_per_cond = 4
+mini_test_per_cond = 4
 
 ########################################################
 # Model parameters

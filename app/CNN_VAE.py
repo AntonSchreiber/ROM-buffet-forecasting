@@ -214,7 +214,6 @@ class Autoencoder(nn.Module):
         return self._decoder(self._encoder(x))
 
     def save(self, path: str=""):
-        print(path + "_encoder.pt")
         torch.save(self._encoder.state_dict(), path + "_encoder.pt")
         torch.save(self._decoder.state_dict(), path + "_decoder.pt")
 
