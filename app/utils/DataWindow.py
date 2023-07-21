@@ -13,19 +13,12 @@ from torch.utils.data import Dataset, TensorDataset, DataLoader
 from math import ceil
 
 
-class TimeSeriesDatasetVAE(Dataset):
-    def __init__(self, input_seq, targets) -> None:
-        self.input_seq = input_seq
-        self.targets = targets
-
-    def __getitem__(self, index: int):
-        pass
-
-
 class DataWindow():
     # class to create data windows from time series datasets
-    def __init__(self, train, test, input_width: int, pred_horizon:int, batch_size) -> None:
+    def __init__(self, train: pt.Tensor, val: pt.Tensor=pt.Tensor(), test: pt.Tensor=pt.Tensor(), 
+                 input_width: int=5, pred_horizon: int=1, batch_size: int=32) -> None:
         self.train = train
+        self.val = val
         self.test = test
 
         self.batch_size = batch_size
@@ -41,13 +34,6 @@ class DataWindow():
         # Define a slice object for the prediction sequence
         self.pred_start = self.input_width
         self.pred_slice = slice(self.pred_start, None)
-
-    def split_to_input_pred(self, features):
-        inputs = features[:, :, self.input_slice]
-        preds = features[:, :, self.pred_slice]
-
-        # the shape is [height, width, time]
-        return inputs, preds
     
     def rolling_window(self, dataset_length):
         # computes the rolling window with indices over full dataset length
@@ -60,21 +46,17 @@ class DataWindow():
         return input_idx, pred_idx
     
     def make_dataset(self, data):
-        input_seqs = []
-        targets = []
-        for i in range(data.shape[2] // self.window_offset):
-            for n, input_seq in enumerate(self.rolling_window(offset=i*self.window_offset, dataset_length=data.shape[2])):
-                # print(input_seq)
-                input_seqs.append(data[:, :, input_seq])
-                target_idx = pt.arange(self.input_width + n + i*self.window_offset, self.input_width + n + i*self.window_offset + self.shift)
-                #print(target_idx)
-                targets.append(data[:, :, target_idx])
+        input_seq = []
+        pred_seq = []
+        for (input_idx, pred_idx) in self.rolling_window(dataset_length=data.shape[1]):
+            input_seq.append(data[:, input_idx])
+            pred_seq.append(data[:, pred_idx])
 
-        input_seqs = pt.stack(input_seqs).unsqueeze(1)
-        targets = pt.stack(targets).unsqueeze(1)
+        input_seq = pt.stack(input_seq).unsqueeze(1)
+        pred_seq = pt.stack(pred_seq).unsqueeze(1)
         # print(input_seqs.shape)
         # print(targets.shape)
-        dataset = TensorDataset(input_seqs, targets)
+        dataset = TensorDataset(input_seq, pred_seq)
         dataloader = DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True)
         return dataset
 
@@ -83,8 +65,8 @@ class DataWindow():
         return self.make_dataset(self.train)
     
     @property
-    def test_dataset(self):
-        return self.make_dataset(self.test)
+    def val_dataset(self):
+        return self.make_dataset(self.val)
     
 
 
@@ -99,9 +81,7 @@ if __name__ == "__main__":
 
     print("Total window size:               ", self.total_window_size)
     print("Input width:                     ", self.input_width)
-    print("input indices:                   ", self.input_indices)
     print("Prediction starts at index:      ", self.pred_start)
-    print("Prediction indices:              ", self.pred_indices)
     print("Prediction horizon:              ", self.pred_horizon)
 
     # dataset = self.train_dataset
