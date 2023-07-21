@@ -48,7 +48,7 @@ class DataWindow():
     def make_dataset(self, data):
         input_seq = []
         pred_seq = []
-        for (input_idx, pred_idx) in self.rolling_window(dataset_length=data.shape[1]):
+        for input_idx, pred_idx in zip(*self.rolling_window(dataset_length=data.shape[1])):
             input_seq.append(data[:, input_idx])
             pred_seq.append(data[:, pred_idx])
 
