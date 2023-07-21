@@ -19,7 +19,7 @@ num_train_flow_conds = 5
 train_split = 450
 val_split = 50
 
-mini_datset = True
+mini_dataset = False
 mini_train_per_cond = 20
 mini_val_per_cond = 4
 mini_test_per_cond = 4
@@ -34,7 +34,7 @@ timestep_reconstruction = 100
 # Model parameters
 ########################################################
 
-epochs = 200
+epochs = 500
 batch_size = 32
 learning_rate = 2e-4
 lr_factor = 0.2

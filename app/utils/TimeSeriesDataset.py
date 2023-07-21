@@ -56,7 +56,7 @@ class DataWindowVAE():
         return inputs, preds
     
     def rolling_window(self, offset, dataset_length):
-        # TODO could you start the new window exactly earlier?
+        # TODO could you start the new window earlier?
         last_idx = offset + self.input_width + self.pred_horizon
         return pt.arange(offset, last_idx if last_idx < dataset_length else dataset_length).unfold(0, self.input_width if last_idx < dataset_length else dataset_length - offset, self.shift)
     

@@ -3,9 +3,7 @@ from typing import List, Tuple
 from shutil import copy
 from time import time
 from collections import defaultdict
-import numpy as np
 import torch as pt
-from sklearn import metrics
 import pandas as pd
 
 
@@ -148,7 +146,7 @@ def train_model(
                 
 
         print(
-            "\r", f"Epoch {e:4d}/{epochs - 1} - " + message, end=""
+            "\r", f"Epoch {e+1:4d}/{epochs} - " + message, end=""
         )
 
     # if the optimizer was created in the training loop,
@@ -250,7 +248,7 @@ def train_cnn_vae(
                 
 
         print(
-            "\r", f"Epoch {e:4d}/{epochs - 1} - " + message, end=""
+            "\r", f"Epoch {e+1:4d}/{epochs} - " + message, end=""
         )
 
     # if the optimizer was created in the training loop,

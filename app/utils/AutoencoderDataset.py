@@ -11,7 +11,7 @@ class AutoencoderDataset(Dataset):
         """
         self.cp = cp
 
-    def __getitem__(self, index: int) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
+    def __getitem__(self, index: int) -> tuple:
         """Retrieves the surface pressure image at the given index
 
         Args:

@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 
 
-DATA_PATH = Path(os.path.abspath('')) / "data"
+DATA_PATH = Path(os.path.abspath('')).parent / "data"
 
 # DATASET
 #
@@ -41,7 +41,7 @@ def load_data(filename: str) -> pt.Tensor:
     return data
 
 
-def get_coords() -> tuple[pt.Tensor, pt.Tensor]:
+def get_coords() -> tuple:
     """Read in the x and y coordinates from the coords.pt file and convert the grid to arrays
 
     Returns:
@@ -167,7 +167,7 @@ def autoencoder_preprocessing():
     print("Done! \n")
 
 
-def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
+def split(data: pt.Tensor) -> tuple:
     """split the pressure data into train, val and test
     """
 
@@ -176,7 +176,7 @@ def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
     split_index = int(config.train_split)
 
     # initialize train and validation data tensors
-    if config.mini_datset:
+    if config.mini_dataset:
         train_cp = data[train_keys[0]][:, :, :config.mini_train_per_cond]
         val_cp = data[train_keys[0]][:, :, split_index:(split_index + config.mini_val_per_cond)]
     else:
@@ -187,7 +187,7 @@ def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
     for train_key in train_keys[1:]:
         train_split = data[train_key][:, :, :split_index]
         val_split = data[train_key][:, :, split_index:]
-        if config.mini_datset:
+        if config.mini_dataset:
             train_cp = pt.concat((train_cp, train_split[:, :, :config.mini_train_per_cond]), dim=2)
             val_cp = pt.concat((val_cp, val_split[:, :, :config.mini_val_per_cond]), dim=2)
         else:
@@ -198,13 +198,13 @@ def split(data: pt.Tensor) -> tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
     print("Shape of val cp:         ", val_cp.shape)
 
     # iterate over test flow conditions and concatenate
-    if config.mini_datset:
+    if config.mini_dataset:
         test_cp = data[config.test_keys[0]][:, :, :config.mini_test_per_cond]
     else:
         test_cp = data[config.test_keys[0]]
 
     for test_key in config.test_keys[1:]:
-        if config.mini_datset:
+        if config.mini_dataset:
             test_cp = pt.concat((test_cp, data[test_key][:, :, :config.mini_test_per_cond]), dim=2)
         else:
             test_cp = pt.concat((test_cp, data[test_key]), dim=2)

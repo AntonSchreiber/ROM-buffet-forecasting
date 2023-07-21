@@ -9,7 +9,8 @@ Some helpful links used as reference for the implementation:
 """
 
 from typing import Callable, Tuple
-from math import prod, log2
+from math import log2
+from numpy import prod
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -218,5 +219,5 @@ class Autoencoder(nn.Module):
         torch.save(self._decoder.state_dict(), path + "_decoder.pt")
 
     def load(self, path: str=""):
-        self._encoder.load_state_dict(torch.load(path + "_encoder.pt"))
-        self._decoder.load_state_dict(torch.load(path + "_decoder.pt"))
+        self._encoder.load_state_dict(torch.load(path + "_encoder.pt", map_location=torch.device('cpu')))
+        self._decoder.load_state_dict(torch.load(path + "_decoder.pt", map_location=torch.device('cpu')))
