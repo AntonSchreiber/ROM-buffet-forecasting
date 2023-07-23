@@ -15,16 +15,22 @@ from utils.training_loop import train_cnn_vae
 import utils.config as config
 import matplotlib.pyplot as plt
 
-pt.manual_seed(0)
+pt.manual_seed(711)
 plt.rcParams["figure.dpi"] = 180
 
 # use GPU if possible
 device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 
+# remote device
 DATA_PATH = join(Path(os.path.abspath('')).parent, "data")
 OUTPUT_PATH = join(Path(os.path.abspath('')).parent, "output", "VAE", "latent_study")
 
-latent_sizes = list(range(10, 311, 20))
+# local
+# DATA_PATH = join(Path(os.path.abspath('')), "data")
+# OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study")
+
+# latent_sizes = list(range(10, 311, 20))
+latent_sizes = [16, 32, 64, 128, 256, 512]
 
 # function to create VAE model
 def make_VAE_model(n_latent: int = 256) -> pt.nn.Module:
@@ -56,8 +62,9 @@ def start_latent_study(train_loader, val_loader):
     for latent_size in latent_sizes:
         print("Training autoencoder with {} bottleneck neurons ...".format(latent_size))
         model = make_VAE_model(latent_size)
+        print(model)
         optimizer = pt.optim.Adam(model.parameters(), lr=config.learning_rate)
-        scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", factor=0.2)
+        scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.patience, factor=config.lr_factor, verbose=True)
 
         results.append(train_cnn_vae(
             model=model,

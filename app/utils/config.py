@@ -20,7 +20,7 @@ train_split = 450
 val_split = 50
 
 mini_dataset = False
-mini_train_per_cond = 20
+mini_train_per_cond = 25
 mini_val_per_cond = 4
 mini_test_per_cond = 4
 
@@ -34,10 +34,12 @@ timestep_reconstruction = 100
 # Model parameters
 ########################################################
 
+grad_clip_val = 1
 epochs = 500
 batch_size = 32
 learning_rate = 2e-4
-lr_factor = 0.2
+lr_factor = 0.5
+patience = 5
 min_loss = 1.05e5
 
 

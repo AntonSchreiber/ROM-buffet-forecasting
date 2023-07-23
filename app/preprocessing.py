@@ -18,8 +18,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
+# remote
+DATA_PATH = join(Path(os.path.abspath('')).parent, "data")
 
-DATA_PATH = Path(os.path.abspath('')).parent / "data"
+# local
+DATA_PATH = join(Path(os.path.abspath('')), "data")
 
 # DATASET
 #
@@ -148,12 +151,8 @@ def autoencoder_preprocessing():
 
     # scale all tensors and create custom Datasets
     print("Making AutoencoderDatasets with the scaled cp")
-    # print("mean of train_cp:    ", cp_scaler.scale(train_cp).mean().item())
-    # print("std of train_cp:     ", cp_scaler.scale(train_cp).std().item())
-    # print("mean of val_cp:      ", cp_scaler.scale(val_cp).mean().item())
-    # print("std of val_cp:       ", cp_scaler.scale(val_cp).std().item())
-    # print("mean of test_cp:     ", cp_scaler.scale(test_cp).mean().item())
-    # print("std of test_cp:      ", cp_scaler.scale(test_cp).std().item())
+    print("max of train_cp:    ", cp_scaler.scale(train_cp).max().item())
+    print("min of train_cp:     ", cp_scaler.scale(train_cp).min().item())
 
     train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
     val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp))

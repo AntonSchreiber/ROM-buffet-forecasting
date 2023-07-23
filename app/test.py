@@ -25,7 +25,8 @@ if cuda_available:
 else:
     cuda_0_available = False
 
-print("CUDA Available:", cuda_available)
+print("Number of GPUs:  ", num_cuda_devices)
+print("CUDA Available:  ", cuda_available)
 print("CUDA:0 Available:", cuda_0_available)
 
 DATA_PATH = join(Path(os.path.abspath('')).parent, "data")
