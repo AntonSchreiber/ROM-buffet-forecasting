@@ -21,31 +21,31 @@ pt.manual_seed(0)
 device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 print(device)
 
+test_case_name = "257_layernorm_lr1e-4_Plateau_f0.1squash_batch32"
+
 DATA_PATH = Path(os.path.abspath('')).parent / "data"
 OUTPUT_PATH = Path(os.path.abspath('')).parent / "output" / "VAE" /"parameter_study"
 print(DATA_PATH)
 print(OUTPUT_PATH)
 
-test_case_name = "256_batchnorm_lr1e-4_Plateau_f0.8nosquash"
-
-latent_size = 256
+latent_size = 257
 
 # function to create VAE model
-def make_VAE_model(n_latent: int = 256) -> pt.nn.Module:
+def make_VAE_model(n_latent: int) -> pt.nn.Module:
     encoder = ConvEncoder(
         in_size=config.target_resolution,
         n_channels=config.input_channels,
         n_latent=n_latent,
         variational=True,
-        batchnorm=True
+        layernorm=True
     )
 
     decoder = ConvDecoder(
         in_size=config.target_resolution,
         n_channels=config.output_channels,
         n_latent=n_latent,
-        batchnorm=True,
-        squash_output=False
+        layernorm=True,
+        squash_output=True
     )
 
     autoencoder = Autoencoder(encoder, decoder)
@@ -60,19 +60,21 @@ if __name__ == "__main__":
     print("    Loading Data")
     train_dataset = pt.load(join(DATA_PATH, "train_dataset.pt"))
     val_dataset = pt.load(join(DATA_PATH, "val_dataset.pt"))
+    test_dataset = pt.load(join(DATA_PATH, "test_dataset.pt"))
 
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
 
     print("-------------------------------")
     print("    Creating model")
-    autoencoder = make_VAE_model(n_latent=256)
+    autoencoder = make_VAE_model(n_latent=257)
 
     # optimizer
     optimizer = pt.optim.Adam(autoencoder.parameters(), lr=1e-4)
 
     # learning rate scheduler
-    scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", factor=0.8, patience=5)
+    scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", factor=0.1, patience=5)
     # mode="min" means that the lr will be reduced when the MSE has stopped decreasing
     # factor states by which factor the lr will be reduced on stagnation
 
@@ -86,6 +88,7 @@ if __name__ == "__main__":
         loss_func=nn.MSELoss(),
         train_loader=train_loader,
         val_loader=val_loader,
+        test_loader=test_loader,
         epochs=config.epochs,
         optimizer=optimizer,
         lr_schedule=scheduler,

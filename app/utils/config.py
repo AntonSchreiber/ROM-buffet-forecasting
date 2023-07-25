@@ -37,8 +37,8 @@ timestep_reconstruction = 100
 grad_clip_val = 1
 epochs = 500
 batch_size = 32
-learning_rate = 2e-4
-lr_factor = 0.5
+learning_rate = 1e-4
+lr_factor = 0.1
 patience = 5
 min_loss = 1.05e5
 

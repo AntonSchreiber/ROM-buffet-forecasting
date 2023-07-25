@@ -129,11 +129,6 @@ def train_cnn_vae(
             else:
                 lr_schedule.step()
 
-        # early stop condition check after each epoch
-        if early_stopper and early_stopper.early_stop(results['val_loss'][-1]):
-            print("\nEarly stopping! Validation loss did not improve for {} epochs.".format(early_stopper.patience))
-            break
-
         # test dataset
         if test_loader is not None:
             model = model.eval()
@@ -159,7 +154,11 @@ def train_cnn_vae(
             if latest_loss < best_loss:
                 best_loss = latest_loss
                 copy(checkpoint_file + suffix, checkpoint_file + "_best")
-                
+
+        # early stop condition check after each epoch
+        if early_stopper and early_stopper.early_stop(results['val_loss'][-1]):
+            print("\nEarly stopping at epoch {}! Validation loss did not improve for {} epochs.".format(e+1, early_stopper.patience))
+            break       
 
         print(
             "\r", f"Epoch {e+1:4d}/{epochs} - " + message, end=""
