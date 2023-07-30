@@ -14,6 +14,7 @@ from numpy import prod
 import torch
 from torch import nn
 import torch.nn.functional as F
+import utils.config as config
 
 
 def power_of_two(shape: Tuple[int]) -> bool:
@@ -221,3 +222,52 @@ class Autoencoder(nn.Module):
     def load(self, path: str=""):
         self._encoder.load_state_dict(torch.load(path + "_encoder.pt", map_location=torch.device('cpu')))
         self._decoder.load_state_dict(torch.load(path + "_decoder.pt", map_location=torch.device('cpu')))
+
+
+# function to create VAE model
+def make_VAE_model(n_latent: int, device: str) -> nn.Module:
+    encoder = ConvEncoder(
+        in_size=config.target_resolution,
+        n_channels=config.input_channels,
+        n_latent=n_latent,
+        variational=True,
+        layernorm=True
+    )
+
+    decoder = ConvDecoder(
+        in_size=config.target_resolution,
+        n_channels=config.output_channels,
+        n_latent=n_latent,
+        layernorm=True,
+        squash_output=True
+    )
+
+    autoencoder = Autoencoder(encoder, decoder)
+    autoencoder.to(device)
+    return autoencoder
+
+
+# function to create encoder model
+def make_encoder_model(n_latent: int, device: str) -> nn.Module:
+    encoder = ConvEncoder(
+        in_size=config.target_resolution,
+        n_channels=config.input_channels,
+        n_latent=n_latent,
+        variational=True,
+        layernorm=True
+    )
+    encoder.to(device)
+    return encoder
+
+
+# function to create encoder model
+def make_decoder_model(n_latent: int, device: str) -> nn.Module:
+    decoder = ConvDecoder(
+        in_size=config.target_resolution,
+        n_channels=config.output_channels,
+        n_latent=n_latent,
+        layernorm=True,
+        squash_output=True
+    )
+    decoder.to(device)
+    return decoder

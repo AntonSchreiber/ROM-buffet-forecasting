@@ -1,5 +1,6 @@
 --find-links https://download.pytorch.org/whl/cu102/torch_stable.html
 torch==1.10.1+cu102
+lightning==1.8
 numpy
 matplotlib
 jupyterlab
