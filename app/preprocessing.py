@@ -162,9 +162,9 @@ def svd_preprocesing():
 
     # save all datasets
     print("Saving ...")
-    pt.save(X_train, join(DATA_PATH, "X_train.pt"))
-    pt.save(X_test_1, join(DATA_PATH, "X_test_1.pt"))
-    pt.save(X_test_2, join(DATA_PATH, "X_test_2.pt"))
+    pt.save(X_train, join(DATA_PATH, "SVD", "X_train.pt"))
+    pt.save(X_test_1, join(DATA_PATH, "SVD", "X_test_1.pt"))
+    pt.save(X_test_2, join(DATA_PATH, "SVD", "X_test_2.pt"))
     print("Done! \n")
 
 
@@ -191,9 +191,9 @@ def autoencoder_preprocessing():
 
     # save all datasets
     print("Saving ...")
-    pt.save(train_dataset, join(DATA_PATH, "train_dataset.pt"))
-    pt.save(val_dataset, join(DATA_PATH, "val_dataset.pt"))
-    pt.save(test_dataset, join(DATA_PATH, "test_dataset.pt"))
+    pt.save(train_dataset, join(DATA_PATH, "VAE", "train_dataset.pt"))
+    pt.save(val_dataset, join(DATA_PATH, "VAE", "val_dataset.pt"))
+    pt.save(test_dataset, join(DATA_PATH, "VAE", "test_dataset.pt"))
     print("Done! \n")
 
 
@@ -244,90 +244,63 @@ def split_data_all(data: pt.Tensor) -> tuple:
     return train_cp, val_cp, test_cp
 
 
-def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str) -> pt.Tensor:
-    # FIXME false function, can be discarded but check
-    """Reshape pressure data and coordinate arrays into a data tensor with timesteps
-
-    Args:
-        x (pt.Tensor): x-coordinates flattened
-        y (pt.Tensor): y-coordinates flattened
-        pressure_data (pt.Tensor): time-resolved pressure data
-        type (str): type of tensor regarding training, validation or testing
-
-    Returns:
-        pt.Tensor: reshaped n x (cp, x, y, t) tensor
-    """
-    print("Reshaping ...")
-    # initialize parameters for tensor construction
-    rows = pressure_data.shape[0] * pressure_data.shape[1]
-    cols = 4
-    pts_per_timestep = x.shape[0]
-    time_steps = pressure_data.shape[1]
-    
-    # flatten pressure data
-    pressure_data_resh = pressure_data.reshape([rows, 1]).squeeze()
-
-    # initialize tensor
-    tensor = pt.zeros((rows, cols))
-
-    # assign data to the tensor
-    for time_step in range(time_steps):
-        start, end = time_step*pts_per_timestep, (time_step+1)*pts_per_timestep
-        tensor[start:end, 1] = x
-        tensor[start:end, 2] = y
-        if type == "train":
-            # timesteps ranging from 000-449
-            tensor[start:end, 3] = time_step % (config.time_steps_per_cond - config.val_split)
-        elif type == "val":
-            # timesteps ranging from 450-499
-            tensor[start:end, 3] = (time_step + config.train_split) % config.time_steps_per_cond
-        else:
-            # timesteps ranging from 000-499
-            tensor[start:end, 3] = time_step % config.time_steps_per_cond
-    tensor[:, 0] = pressure_data_resh
-
-    print("Shape of data tensor:                ", tensor.shape, "\n")
-    return tensor
-
-
 def single_flow_cond_preprocessing():
     """ preprocessing for the single flow condition pipeline """
-    print("Creating datasets for single flow condition training pipeline ...")
+    print("Creating SVD and VAE datasets for the single flow condition training pipeline ...")
     # load interpolated dataset and pick a flow condition
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
-    flow_cond = list(data.keys())[2]
+    flow_cond = list(data.keys())[3]
     data = data[flow_cond]
     data.shape
-    print("Flow condtion:       " ,flow_cond)
+    print("Flow condtion:       " ,flow_cond, "\n")
 
     # split and reshape the data
     train_cp, test_cp = split_data_single(data)
 
     # fit a Standard-scaler on the training data
-    print("Fitting Scaler on training data")
+    print("Fitting Scaler on training data \n")
     cp_scaler = MinMaxScaler_1_1().fit(train_cp)
 
-    # scale all tensors and create custom Datasets
+    # flatten tensors into appropriate shape for SVD
+    print("Reshaping tensors for SVD")
+    X_train = train_cp.flatten(0, 1)
+    X_test = test_cp.flatten(0, 1)
+    print("Shape of SVD train:      ", X_train.shape)
+    print("Shape of SVD test:       ", X_test.shape, "\n")
+
+    # scale tensors and create custom VAE datasets
     print("Making AutoencoderDatasets with the scaled cp")
     train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
     test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))    
+    print("Shape of VAE train:      ", train_cp.shape)
+    print("Shape of VAE test:       ", test_cp.shape, "\n")
 
     # save all datasets
     print("Saving ...")
-    pt.save(train_dataset, join(DATA_PATH, "train_dataset.pt"))
-    pt.save(test_dataset, join(DATA_PATH, "test_dataset.pt"))
+    pt.save(X_train, join(DATA_PATH, "pipeline_single", "X_train.pt"))
+    pt.save(X_test, join(DATA_PATH, "pipeline_single", "X_test.pt"))
+    pt.save(train_dataset, join(DATA_PATH, "pipeline_single", "train_dataset.pt"))
+    pt.save(test_dataset, join(DATA_PATH, "pipeline_single", "test_dataset.pt"))
     print("Done! \n")
 
-def split_data_single():
+
+def split_data_single(data):
     """ split single flow cond of dataset into train and test"""
-    return
+    num_train = int(data.shape[2] * config.single_flow_cond_train_share)
+    print("Number of train samples:     ", num_train)
+    print("Number of test samples:      ", data.shape[2] - num_train)
+
+    return data[:, :, :num_train], data[:, :, num_train:]
+
 
 def split_data_multi():
     """ split dataset into multiple flow conds for train (&val) and a single flow cond for test"""
     return
 
+
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
+    # svd_preprocesing()
     # autoencoder_preprocessing()
-    svd_preprocesing()
+    single_flow_cond_preprocessing()

@@ -25,7 +25,7 @@ plt.rcParams["figure.dpi"] = 180
 device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 
 # remote device
-DATA_PATH = join(Path(os.path.abspath('')).parent, "data")
+DATA_PATH = join(Path(os.path.abspath('')).parent, "data", "VAE")
 OUTPUT_PATH = join(Path(os.path.abspath('')).parent, "output", "VAE", "latent_study")
 
 # local
