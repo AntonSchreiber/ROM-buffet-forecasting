@@ -38,18 +38,21 @@ timestep_reconstruction = 100
 ########################################################
 
 # CNN-VAE
-input_channels = (1, 64, 128, 256, 512)
-output_channels = (512, 256, 128, 64, 1)
-latent_size = 256
-epochs = 500
-batch_size = 32
-learning_rate = 1e-4
-lr_factor = 0.1
-patience = 5
-min_loss = 1.05e5
+VAE_input_channels = (1, 64, 128, 256, 512)
+VAE_output_channels = (512, 256, 128, 64, 1)
+VAE_latent_size = 256
+VAE_epochs = 500
+VAE_batch_size = 32
+VAE_learning_rate = 1e-4
+VAE_lr_factor = 0.1
+VAE_patience = 5
 
 # Fully-Connected
-
+FC_batch_size = 32
+FC_learning_rate = 1e-3
+FC_lr_factor = 0.1
+FC_patience = 5
+FC_epochs = 500
 
 
 ########################################################

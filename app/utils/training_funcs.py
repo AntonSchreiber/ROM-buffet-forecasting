@@ -1,11 +1,8 @@
 import sys
 import os
 from os.path import join
-parent_dir = os.path.abspath(join(os.getcwd(), os.pardir))
-app_dir = join(parent_dir, "app")
-if app_dir not in sys.path:
-      sys.path.append(app_dir)
 import utils.config as config
+from utils.CNN_VAE import ConvDecoder
 from utils.EarlyStopper import EarlyStopper
 from glob import glob
 from typing import List, Tuple
@@ -176,11 +173,13 @@ def run_epoch_AR_with_VAE(
     model: pt.nn.Module,
     optimizer: pt.optim.Optimizer,
     data_loader: pt.utils.data.DataLoader,
-    loss_func: pt.nn.Module,
+    loss_func_latent: pt.nn.Module,
+    loss_func_orig: pt.nn.Module,
     device: str,
     results: dict,
     score_funcs: dict,
-    prefix: str
+    prefix: str,
+    decoder: ConvDecoder
     ) -> float:
     """Perform one optimizing step on a model.
 
@@ -195,22 +194,34 @@ def run_epoch_AR_with_VAE(
     start_time = time()
 
     # loop over all batches
-    for surface_data in data_loader:
-        surface_data = surface_data.to(device)
+    for inputs, targets in data_loader:
+        inputs = inputs.flatten(1, 2).to(device)
+        targets = targets.flatten(1, 2).to(device)
+        
+        preds = model(inputs)
+        loss_latent = loss_func_latent(targets, preds)
 
-        pred = model(surface_data)
-        loss = loss_func(surface_data, pred)
+        # TODO add full space loss
+        if decoder:
+            pass
+        # with pt.no_grad():
+        #     preds_dec = pt.stack([decoder(preds[n]).detach() for n in range(len(train_data))], dim=1)
+        # loss_orig = loss_func_orig()
+
+        # combine losses with appropriate weights
+        total_loss = loss_latent
+        # total_loss = 0.9 * loss_latent + 0.1 * loss_orig
 
         if model.training:
-            loss.backward()
+            total_loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-        running_loss.append(loss.item())
+        running_loss.append(total_loss.item())
 
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
-            labels_true.extend(surface_data.detach().cpu().tolist())
-            labels_pred.extend(pred.detach().cpu().tolist())
+            labels_true.extend(targets.detach().cpu().tolist())
+            labels_pred.extend(preds.detach().cpu().tolist())
 
     # keep track of performance
     results[f"{prefix}_loss"].append(sum(running_loss) / len(running_loss))
@@ -222,7 +233,9 @@ def run_epoch_AR_with_VAE(
 
 def train_AR_with_VAE(
     model: pt.nn.Module,
-    loss_func: pt.nn.Module,
+    decoder: ConvDecoder,
+    loss_func_latent: pt.nn.Module,
+    loss_func_orig: pt.nn.Module,
     train_loader: pt.utils.data.DataLoader,
     val_loader: pt.utils.data.DataLoader = None,
     test_loader: pt.utils.data.DataLoader = None,
@@ -243,6 +256,8 @@ def train_AR_with_VAE(
     https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
     """
 
+    assert model.input_size % decoder._latent.in_features == 0, f"Number of model input neurons {model.input_size} is not divisible by number of latent dimensions {decoder._latent.in_features} with no remainder."
+
     # dictionary for keeping track of training performance
     results = defaultdict(list)
     best_loss = float("inf")
@@ -259,9 +274,17 @@ def train_AR_with_VAE(
     for e in range(epochs):
         # model update
         model = model.train()
-        total_train_time += run_epoch_VAE(
-            model, optimizer, train_loader, loss_func, device,
-            results, score_funcs, prefix="train"
+        total_train_time += run_epoch_AR_with_VAE(
+            model=model, 
+            decoder=decoder,
+            optimizer=optimizer, 
+            data_loader=train_loader, 
+            loss_func_latent=loss_func_latent, 
+            loss_func_orig=loss_func_orig, 
+            device=device,
+            results=results, 
+            score_funcs=score_funcs, 
+            prefix="train"
         )
         results["epoch"].append(e)
         results["total_time"].append(total_train_time)
@@ -272,10 +295,18 @@ def train_AR_with_VAE(
         if val_loader is not None:
             model = model.eval()
             with pt.no_grad():
-                _ = run_epoch_VAE(
-                    model, optimizer, val_loader, loss_func, device,
-                    results, score_funcs, prefix="val"
-                )
+                _ = run_epoch_AR_with_VAE(
+                model=model, 
+                decoder=decoder,
+                optimizer=optimizer, 
+                data_loader=val_loader, 
+                loss_func_latent=loss_func_latent, 
+                loss_func_orig=loss_func_orig, 
+                device=device,
+                results=results, 
+                score_funcs=score_funcs, 
+                prefix="val"
+            )
             message += f"; Validation loss: {results['val_loss'][-1]:2.6e}"
 
         # update of learning rate
@@ -289,10 +320,18 @@ def train_AR_with_VAE(
         if test_loader is not None:
             model = model.eval()
             with pt.no_grad():
-                _ = run_epoch_VAE(
-                    model, optimizer, test_loader, loss_func, device,
-                    results, score_funcs, prefix="test"
-                )
+                _ = run_epoch_AR_with_VAE(
+                model=model, 
+                decoder=decoder,
+                optimizer=optimizer, 
+                data_loader=test_loader, 
+                loss_func_latent=loss_func_latent, 
+                loss_func_orig=loss_func_orig, 
+                device=device,
+                results=results, 
+                score_funcs=score_funcs, 
+                prefix="test"
+            )
             message += f"; Test loss: {results['test_loss'][-1]:2.6e}"
 
         # save checkpoint

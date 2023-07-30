@@ -110,7 +110,7 @@ def start_latent_study_repeat(n_repeat, train_loader, val_loader, test_loader):
 
             # start training and add results to defaultdict
             study_results[str(latent_size)].append(
-                train_cnn_vae(
+                train_VAE(
                     model=model,
                     loss_func=nn.MSELoss(),
                     train_loader=train_loader,

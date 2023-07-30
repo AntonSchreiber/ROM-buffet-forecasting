@@ -261,26 +261,17 @@ def single_flow_cond_preprocessing():
     print("Fitting Scaler on training data \n")
     cp_scaler = MinMaxScaler_1_1().fit(train_cp)
 
-    # flatten tensors into appropriate shape for SVD
-    print("Reshaping tensors for SVD")
-    X_train = train_cp.flatten(0, 1)
-    X_test = test_cp.flatten(0, 1)
-    print("Shape of SVD train:      ", X_train.shape)
-    print("Shape of SVD test:       ", X_test.shape, "\n")
-
     # scale tensors and create custom VAE datasets
-    print("Making AutoencoderDatasets with the scaled cp")
-    train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
-    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))    
-    print("Shape of VAE train:      ", train_cp.shape)
-    print("Shape of VAE test:       ", test_cp.shape, "\n")
+    print("Scaling datasets ...")
+    train_cp = cp_scaler.scale(train_cp)
+    test_cp = cp_scaler.scale(test_cp)
+    print("Shape of train:      ", train_cp.shape)
+    print("Shape of test:       ", test_cp.shape, "\n")
 
     # save all datasets
     print("Saving ...")
-    pt.save(X_train, join(DATA_PATH, "pipeline_single", "X_train.pt"))
-    pt.save(X_test, join(DATA_PATH, "pipeline_single", "X_test.pt"))
-    pt.save(train_dataset, join(DATA_PATH, "pipeline_single", "train_dataset.pt"))
-    pt.save(test_dataset, join(DATA_PATH, "pipeline_single", "test_dataset.pt"))
+    pt.save(train_cp, join(DATA_PATH, "pipeline_single", "train_dataset.pt"))
+    pt.save(test_cp, join(DATA_PATH, "pipeline_single", "test_dataset.pt"))
     print("Done! \n")
 
 

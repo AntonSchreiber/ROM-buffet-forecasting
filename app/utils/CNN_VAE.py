@@ -228,7 +228,7 @@ class Autoencoder(nn.Module):
 def make_VAE_model(n_latent: int, device: str) -> nn.Module:
     encoder = ConvEncoder(
         in_size=config.target_resolution,
-        n_channels=config.input_channels,
+        n_channels=config.VAE_input_channels,
         n_latent=n_latent,
         variational=True,
         layernorm=True
@@ -236,7 +236,7 @@ def make_VAE_model(n_latent: int, device: str) -> nn.Module:
 
     decoder = ConvDecoder(
         in_size=config.target_resolution,
-        n_channels=config.output_channels,
+        n_channels=config.VAE_output_channels,
         n_latent=n_latent,
         layernorm=True,
         squash_output=True
@@ -251,7 +251,7 @@ def make_VAE_model(n_latent: int, device: str) -> nn.Module:
 def make_encoder_model(n_latent: int, device: str) -> nn.Module:
     encoder = ConvEncoder(
         in_size=config.target_resolution,
-        n_channels=config.input_channels,
+        n_channels=config.VAE_input_channels,
         n_latent=n_latent,
         variational=True,
         layernorm=True
@@ -264,7 +264,7 @@ def make_encoder_model(n_latent: int, device: str) -> nn.Module:
 def make_decoder_model(n_latent: int, device: str) -> nn.Module:
     decoder = ConvDecoder(
         in_size=config.target_resolution,
-        n_channels=config.output_channels,
+        n_channels=config.VAE_output_channels,
         n_latent=n_latent,
         layernorm=True,
         squash_output=True

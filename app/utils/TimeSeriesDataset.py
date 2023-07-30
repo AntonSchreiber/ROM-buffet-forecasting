@@ -44,8 +44,8 @@ class TimeSeriesDataset():
             pred_seq.append(data[:, pred_idx])
 
         # stack to pt.Tensors
-        input_seq = pt.stack(input_seq).unsqueeze(1)
-        pred_seq = pt.stack(pred_seq).unsqueeze(1)
+        input_seq = pt.stack(input_seq)
+        pred_seq = pt.stack(pred_seq)
 
         # store all feature-label pairs in a TensorDataset
         return TensorDataset(input_seq, pred_seq)

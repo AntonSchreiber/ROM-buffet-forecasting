@@ -14,10 +14,13 @@ from pathlib import Path
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import DataLoader
+pt.manual_seed(0)
 
 from utils.TimeSeriesDataset import TimeSeriesDataset
 from utils.FullyConnected import FullyConnected
 from utils.CNN_VAE import make_encoder_model, make_decoder_model
+from utils.training_funcs import train_AR_with_VAE
+import utils.config as config
 
 # use GPU if possible
 device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
@@ -43,8 +46,8 @@ if __name__ == '__main__':
 
     # encode datasets 
     with pt.no_grad():
-        train_enc = pt.stack([encoder(train_data[n].unsqueeze(0)).squeeze(0).detach() for n in range(len(train_data))], dim=1)
-        test_enc = pt.stack([encoder(test_data[n].unsqueeze(0)).squeeze(0).detach() for n in range(len(test_data))], dim=1)
+        train_enc = pt.stack([encoder(train_data[:, :, n].unsqueeze(0).unsqueeze(0)).squeeze(0).detach() for n in range(train_data.shape[2])], dim=1)
+        test_enc = pt.stack([encoder(test_data[:, :, n].unsqueeze(0).unsqueeze(0)).squeeze(0).detach() for n in range(test_data.shape[2])], dim=1)
         print("Shape of encoded train data:     ", train_enc.shape)
         print("Shape of encoded test data:      ", test_enc.shape)
 
@@ -55,18 +58,35 @@ if __name__ == '__main__':
     test_loader = DataLoader(timeseriesdataset.test_dataset, batch_size=32, shuffle=True)
 
     # initialize prediction model
-    hidden_size = 5
-    n_hidden_layers = 2
+    hidden_size = 1024
+    n_hidden_layers = 100
 
     model = FullyConnected(
-        input_size=N_LATENT,
-        output_size=N_LATENT,
+        input_size=N_LATENT * INPUT_WIDTH,
+        output_size=N_LATENT * PRED_HORIZON,
         hidden_size=hidden_size,
         n_hidden_layers=n_hidden_layers
     )
 
     # define loss functions
-    red_space_loss_func = nn.MSELoss()
-    full_space_loss_func = nn.MSELoss()
+    loss_func_latent = nn.MSELoss()
+    loss_func_orig = nn.MSELoss()
 
     optimizer = pt.optim.Adam(model.parameters(), lr=1e-3)
+
+    scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience, factor=config.FC_lr_factor)
+
+    results = train_AR_with_VAE(
+        model=model,
+        loss_func_latent=loss_func_latent,
+        loss_func_orig=loss_func_orig,
+        train_loader=train_loader,
+        val_loader=test_loader,
+        optimizer=optimizer,
+        lr_schedule=scheduler,
+        epochs=config.FC_epochs,
+        device=device,
+        decoder=decoder
+    )
+
+    
