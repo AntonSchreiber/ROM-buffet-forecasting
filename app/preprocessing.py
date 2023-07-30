@@ -12,10 +12,8 @@ from pathlib import Path
 from os.path import join
 import torch as pt
 from torch.nn.functional import interpolate
-from torch.utils.data import TensorDataset
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import random
+random.seed(10)
 
 
 # remote
@@ -134,8 +132,44 @@ def interpolate_tensor(data_tensor: pt.Tensor) -> pt.Tensor:
     return data_tensor_interp
 
 
+def svd_preprocesing():
+    """Loads interpolated dataset and wraps it into appropriate tensors for SVD computations
+    """
+    print("Creating SVD datasets from surface pressure data ...")
+    # load data and extract keys
+    data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
+    keys = list(data.keys())
+
+    # sample two random keys for test data except the outer ones
+    test_keys = random.sample(keys[1:-1], 2)
+    print("The test keys are:       ", test_keys)
+
+    # assemble test data
+    X_test_1 = data[test_keys[0]].flatten(0, 1)
+    X_test_2 = data[test_keys[1]].flatten(0, 1)
+    print("Shape of test_data_1 is:   ", X_test_1.shape, "\n")
+
+    # extract the train keys and shuffle them
+    train_keys = [key for key in keys if key not in test_keys]
+    random.shuffle(train_keys)
+    print("The train keys are:      ", train_keys)
+
+    # assemble train data
+    X_train = data[train_keys[0]].flatten(0, 1)
+    for i in range(1, len(train_keys)):
+        X_train = pt.concat((X_train, data[train_keys[i]].flatten(0, 1)), dim=1)
+    print("Shape of train_data is:  ", X_train.shape, "\n")
+
+    # save all datasets
+    print("Saving ...")
+    pt.save(X_train, join(DATA_PATH, "X_train.pt"))
+    pt.save(X_test_1, join(DATA_PATH, "X_test_1.pt"))
+    pt.save(X_test_2, join(DATA_PATH, "X_test_2.pt"))
+    print("Done! \n")
+
+
 def autoencoder_preprocessing():
-    """Loads interpolated dataset and coordinates and turns them into TensorDatasets for autoencoder training
+    """Loads interpolated dataset and wraps it into TensorDatasets for autoencoder training
     """
     print("Creating custom autoencoder datasets from surface pressure data ...")
 
@@ -143,7 +177,7 @@ def autoencoder_preprocessing():
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
 
     # split and reshape the data
-    train_cp, val_cp, test_cp = split_autoencoder_data(data)
+    train_cp, val_cp, test_cp = split_data_all(data)
 
     # fit a Standard-scaler on the training data
     print("Fitting Scaler on training data")
@@ -151,9 +185,6 @@ def autoencoder_preprocessing():
 
     # scale all tensors and create custom Datasets
     print("Making AutoencoderDatasets with the scaled cp")
-    print("max of train_cp:    ", cp_scaler.scale(train_cp).max().item())
-    print("min of train_cp:     ", cp_scaler.scale(train_cp).min().item())
-
     train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
     val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp))
     test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))    
@@ -269,9 +300,23 @@ def single_flow_cond_preprocessing():
     data.shape
     print("Flow condtion:       " ,flow_cond)
 
+    # split and reshape the data
+    train_cp, test_cp = split_data_single(data)
 
-    
-    return
+    # fit a Standard-scaler on the training data
+    print("Fitting Scaler on training data")
+    cp_scaler = MinMaxScaler_1_1().fit(train_cp)
+
+    # scale all tensors and create custom Datasets
+    print("Making AutoencoderDatasets with the scaled cp")
+    train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
+    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))    
+
+    # save all datasets
+    print("Saving ...")
+    pt.save(train_dataset, join(DATA_PATH, "train_dataset.pt"))
+    pt.save(test_dataset, join(DATA_PATH, "test_dataset.pt"))
+    print("Done! \n")
 
 def split_data_single():
     """ split single flow cond of dataset into train and test"""
@@ -284,4 +329,5 @@ def split_data_multi():
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
-    autoencoder_preprocessing()
+    # autoencoder_preprocessing()
+    svd_preprocesing()
