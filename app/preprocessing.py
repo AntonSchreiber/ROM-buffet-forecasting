@@ -135,15 +135,15 @@ def interpolate_tensor(data_tensor: pt.Tensor) -> pt.Tensor:
 
 
 def autoencoder_preprocessing():
-    """Loads interpolated dataset and coordinates and turns them into TensorDatasets
+    """Loads interpolated dataset and coordinates and turns them into TensorDatasets for autoencoder training
     """
-    print("Creating custom autoencoder datasets from surface pressure data and coordinate meshes ...")
+    print("Creating custom autoencoder datasets from surface pressure data ...")
 
     # load interpolated dataset
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
 
     # split and reshape the data
-    train_cp, val_cp, test_cp = split(data)
+    train_cp, val_cp, test_cp = split_autoencoder_data(data)
 
     # fit a Standard-scaler on the training data
     print("Fitting Scaler on training data")
@@ -166,7 +166,7 @@ def autoencoder_preprocessing():
     print("Done! \n")
 
 
-def split(data: pt.Tensor) -> tuple:
+def split_data_all(data: pt.Tensor) -> tuple:
     """split the pressure data into train, val and test
     """
 
@@ -214,6 +214,7 @@ def split(data: pt.Tensor) -> tuple:
 
 
 def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str) -> pt.Tensor:
+    # FIXME false function, can be discarded but check
     """Reshape pressure data and coordinate arrays into a data tensor with timesteps
 
     Args:
@@ -256,6 +257,29 @@ def reshape_data(x: pt.Tensor, y: pt.Tensor, pressure_data: pt.Tensor, type: str
 
     print("Shape of data tensor:                ", tensor.shape, "\n")
     return tensor
+
+
+def single_flow_cond_preprocessing():
+    """ preprocessing for the single flow condition pipeline """
+    print("Creating datasets for single flow condition training pipeline ...")
+    # load interpolated dataset and pick a flow condition
+    data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
+    flow_cond = list(data.keys())[2]
+    data = data[flow_cond]
+    data.shape
+    print("Flow condtion:       " ,flow_cond)
+
+
+    
+    return
+
+def split_data_single():
+    """ split single flow cond of dataset into train and test"""
+    return
+
+def split_data_multi():
+    """ split dataset into multiple flow conds for train (&val) and a single flow cond for test"""
+    return
 
 if __name__ == "__main__":
     # interpolate_coords()

@@ -32,7 +32,7 @@ OUTPUT_PATH = join(Path(os.path.abspath('')).parent, "output", "VAE", "latent_st
 # DATA_PATH = join(Path(os.path.abspath('')), "data")
 # OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study")
 
-latent_sizes = [8, 16, 64, 128, 256, 512]
+latent_sizes = [8, 16, 32, 64, 128, 256, 512]
 
 # function to create VAE model
 def make_VAE_model(n_latent: int) -> pt.nn.Module:
@@ -106,7 +106,7 @@ def start_latent_study_repeat(n_repeat, train_loader, val_loader, test_loader):
             model = make_VAE_model(latent_size)
             optimizer = pt.optim.Adam(model.parameters(), lr=config.learning_rate)
             scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.patience, factor=config.lr_factor)
-            early_stopper = EarlyStopper(patience=50, mode='min')
+            #early_stopper = EarlyStopper(patience=50, mode='min')
 
             # start training and add results to defaultdict
             study_results[str(latent_size)].append(
@@ -119,8 +119,7 @@ def start_latent_study_repeat(n_repeat, train_loader, val_loader, test_loader):
                     epochs=config.epochs,
                     optimizer=optimizer,
                     lr_schedule=scheduler,
-                    device=device,
-                    early_stopper=early_stopper
+                    device=device
                 ))
             # create directory to save model state
             subfolder = join(OUTPUT_PATH, str(latent_size))
