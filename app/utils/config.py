@@ -37,6 +37,9 @@ timestep_reconstruction = 100
 # Model parameters
 ########################################################
 
+# SVD
+SVD_rank = 250
+
 # CNN-VAE
 VAE_input_channels = (1, 64, 128, 256, 512)
 VAE_output_channels = (512, 256, 128, 64, 1)

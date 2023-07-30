@@ -11,6 +11,7 @@
 import os
 from os.path import join
 from pathlib import Path
+import matplotlib.pyplot as plt
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -19,7 +20,7 @@ pt.manual_seed(0)
 from utils.TimeSeriesDataset import TimeSeriesDataset
 from utils.FullyConnected import FullyConnected
 from utils.CNN_VAE import make_encoder_model, make_decoder_model
-from utils.training_funcs import train_AR_with_VAE
+from utils.training_funcs import train_AR_pred
 import utils.config as config
 
 # use GPU if possible
@@ -30,7 +31,7 @@ DATA_PATH = join(Path(os.path.abspath('')), "data", "pipeline_single")
 OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond")
 
 N_LATENT = 128
-INPUT_WIDTH = 50
+INPUT_WIDTH = 90
 PRED_HORIZON = 1
 
 if __name__ == '__main__':
@@ -59,7 +60,7 @@ if __name__ == '__main__':
 
     # initialize prediction model
     hidden_size = 1024
-    n_hidden_layers = 100
+    n_hidden_layers = 200
 
     model = FullyConnected(
         input_size=N_LATENT * INPUT_WIDTH,
@@ -72,11 +73,11 @@ if __name__ == '__main__':
     loss_func_latent = nn.MSELoss()
     loss_func_orig = nn.MSELoss()
 
+    # define utilities
     optimizer = pt.optim.Adam(model.parameters(), lr=1e-3)
-
     scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience, factor=config.FC_lr_factor)
 
-    results = train_AR_with_VAE(
+    results = train_AR_pred(
         model=model,
         loss_func_latent=loss_func_latent,
         loss_func_orig=loss_func_orig,
@@ -89,4 +90,12 @@ if __name__ == '__main__':
         decoder=decoder
     )
 
-    
+    plt.plot(results["epoch"], results["train_loss"], lw=1, label="training")
+    plt.plot(results["epoch"], results["val_loss"], lw=1, label="validation")
+    plt.yscale("log")
+    plt.xlim(0, 500)
+    plt.xlabel("epoch")
+    plt.ylabel("MSE")
+    plt.legend()
+    plt.show()
+

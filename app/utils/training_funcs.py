@@ -169,7 +169,7 @@ def train_VAE(
     return pd.DataFrame.from_dict(results)
 
 
-def run_epoch_AR_with_VAE(
+def run_epoch_AR_pred(
     model: pt.nn.Module,
     optimizer: pt.optim.Optimizer,
     data_loader: pt.utils.data.DataLoader,
@@ -179,7 +179,7 @@ def run_epoch_AR_with_VAE(
     results: dict,
     score_funcs: dict,
     prefix: str,
-    decoder: ConvDecoder
+    dim_reduct,
     ) -> float:
     """Perform one optimizing step on a model.
 
@@ -199,11 +199,10 @@ def run_epoch_AR_with_VAE(
         targets = targets.flatten(1, 2).to(device)
         
         preds = model(inputs)
+        assert preds.shape == targets.shape
         loss_latent = loss_func_latent(targets, preds)
 
         # TODO add full space loss
-        if decoder:
-            pass
         # with pt.no_grad():
         #     preds_dec = pt.stack([decoder(preds[n]).detach() for n in range(len(train_data))], dim=1)
         # loss_orig = loss_func_orig()
@@ -231,9 +230,8 @@ def run_epoch_AR_with_VAE(
     return time() - start_time
 
 
-def train_AR_with_VAE(
+def train_AR_pred(
     model: pt.nn.Module,
-    decoder: ConvDecoder,
     loss_func_latent: pt.nn.Module,
     loss_func_orig: pt.nn.Module,
     train_loader: pt.utils.data.DataLoader,
@@ -246,7 +244,9 @@ def train_AR_with_VAE(
     log_all: bool = False,
     lr_schedule: pt.optim.lr_scheduler._LRScheduler = None,
     optimizer: pt.optim.Optimizer = None,
-    early_stopper: EarlyStopper = None
+    early_stopper: EarlyStopper = None,
+    decoder: ConvDecoder = None,
+    U: pt.Tensor = None
     ) -> pd.DataFrame:
     """Perform one optimizing step on a model.
 
@@ -255,8 +255,18 @@ def train_AR_with_VAE(
     refer to:
     https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
     """
+    # make sure that either decoder or left singular vectors were given as arguments
+    assert (decoder is not None) ^ (U is not None), "Either decoder or left singular vectors (U) can't be None"
 
-    assert model.input_size % decoder._latent.in_features == 0, f"Number of model input neurons {model.input_size} is not divisible by number of latent dimensions {decoder._latent.in_features} with no remainder."
+    if decoder is not None:
+        latent_features_dim = decoder._latent.in_features
+    elif U is not None:
+        latent_features_dim = U.shape[1]
+
+    assert model.input_size % latent_features_dim == 0, f"Number of model input neurons {model.input_size} is not divisible by the number of latent dimensions {latent_features_dim} with no remainder."
+
+    dim_reduct = decoder if decoder is not None else U
+
 
     # dictionary for keeping track of training performance
     results = defaultdict(list)
@@ -274,9 +284,9 @@ def train_AR_with_VAE(
     for e in range(epochs):
         # model update
         model = model.train()
-        total_train_time += run_epoch_AR_with_VAE(
+        total_train_time += run_epoch_AR_pred(
             model=model, 
-            decoder=decoder,
+            dim_reduct=dim_reduct,
             optimizer=optimizer, 
             data_loader=train_loader, 
             loss_func_latent=loss_func_latent, 
@@ -295,9 +305,9 @@ def train_AR_with_VAE(
         if val_loader is not None:
             model = model.eval()
             with pt.no_grad():
-                _ = run_epoch_AR_with_VAE(
+                _ = run_epoch_AR_pred(
                 model=model, 
-                decoder=decoder,
+                dim_reduct=dim_reduct,
                 optimizer=optimizer, 
                 data_loader=val_loader, 
                 loss_func_latent=loss_func_latent, 
@@ -320,9 +330,9 @@ def train_AR_with_VAE(
         if test_loader is not None:
             model = model.eval()
             with pt.no_grad():
-                _ = run_epoch_AR_with_VAE(
+                _ = run_epoch_AR_pred(
                 model=model, 
-                decoder=decoder,
+                dim_reduct=dim_reduct,
                 optimizer=optimizer, 
                 data_loader=test_loader, 
                 loss_func_latent=loss_func_latent, 

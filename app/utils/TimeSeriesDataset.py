@@ -26,6 +26,7 @@ class TimeSeriesDataset():
         self.pred_slice = slice(self.pred_start, None)
     
     def rolling_window(self, dataset_length):
+        assert dataset_length >= self.total_window_size, f"Dataset length must be >= total window size"
         # computes the rolling window with indices over full dataset length
         rolling_window = pt.arange(0, dataset_length).unfold(dimension=0, size=self.total_window_size, step=self.pred_horizon)
 
