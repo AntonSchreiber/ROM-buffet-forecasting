@@ -64,7 +64,7 @@ def run_epoch(
     return time() - start_time
 
 
-def train_cnn_vae(
+def train_VAE(
     model: pt.nn.Module,
     loss_func: pt.nn.Module,
     train_loader: pt.utils.data.DataLoader,

@@ -11,8 +11,8 @@ from pathlib import Path
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from CNN_VAE import ConvDecoder, ConvEncoder, Autoencoder
-from utils.training_loop import train_cnn_vae
+from utils.CNN_VAE import ConvDecoder, ConvEncoder, Autoencoder
+from utils.training_loop_VAE import train_VAE
 import utils.config as config
 from utils.EarlyStopper import EarlyStopper
 import matplotlib.pyplot as plt
@@ -68,7 +68,7 @@ def start_latent_study(train_loader, val_loader, test_loader):
         optimizer = pt.optim.Adam(model.parameters(), lr=config.learning_rate)
         scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.patience, factor=config.lr_factor)
 
-        results.append(train_cnn_vae(
+        results.append(train_VAE(
             model=model,
             loss_func=nn.MSELoss(),
             train_loader=train_loader,

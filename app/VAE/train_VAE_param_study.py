@@ -10,8 +10,8 @@ from pathlib import Path
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from CNN_VAE import ConvDecoder, ConvEncoder, Autoencoder
-from utils.training_loop import train_cnn_vae
+from utils.CNN_VAE import ConvDecoder, ConvEncoder, Autoencoder
+from utils.training_loop_VAE import train_VAE
 import utils.config as config
 from utils.EarlyStopper import EarlyStopper
 
