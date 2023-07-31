@@ -38,9 +38,9 @@ OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond", "par
 N_LATENT = 16
 PRED_HORIZON = 1
 
-INPUT_WIDTHS = [40, 50]
-HIDDEN_SIZES = [64, 128]
-N_HIDDEN_LAYERS = [1, 2]
+INPUT_WIDTHS = [10, 20, 30, 40, 50, 60, 70, 80]
+HIDDEN_SIZES = [8, 16, 32, 64, 96, 128, 256, 512, 1024]
+N_HIDDEN_LAYERS = [1, 2, 3, 4, 5, 6]
 
 def start_study():
     print("Training Fully-Connected models with varying model parameters: ")
@@ -62,13 +62,11 @@ def start_study():
         print("--input_width={}, hidden_size={} and n_hidden={}".format(input_width, hidden_size, n_hidden))
 
         # create TimeSeriesDataset object to create windows of data, feed into DataLoaders
-        print("     creating TimeSeriesDataset and DataLoaders ... ")
         timeseriesdataset = TimeSeriesDataset(train=train_enc, test=test_enc, input_width=input_width, pred_horizon=PRED_HORIZON)
         train_loader = DataLoader(timeseriesdataset.train_dataset, batch_size=config.FC_batch_size, shuffle=True)
         test_loader = DataLoader(timeseriesdataset.test_dataset, batch_size=config.FC_batch_size, shuffle=True)
         
         # initialize model and utilities
-        print("     initializing model and training utilities ...")
         model = FullyConnected(
             input_size=N_LATENT * input_width,
             output_size=N_LATENT,
@@ -81,8 +79,7 @@ def start_study():
         scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience_scheduler, factor=config.FC_lr_factor)
         earlystopper = EarlyStopper(patience=config.FC_patience_earlystop)
 
-
-        print("     starting training ...")
+        # start training and append resoults to defaultdict
         study_results[f"{input_width}_{hidden_size}_{n_hidden}"].append(train_AR_pred(
             model=model,
             loss_func=loss_func_latent,
