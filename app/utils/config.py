@@ -48,14 +48,16 @@ VAE_epochs = 500
 VAE_batch_size = 32
 VAE_learning_rate = 1e-4
 VAE_lr_factor = 0.1
-VAE_patience = 5
+VAE_patience_scheduler = 5
+VAE_patience_earlystop = 50
 
 # Fully-Connected
 FC_batch_size = 32
 FC_learning_rate = 1e-3
 FC_lr_factor = 0.1
-FC_patience = 5
 FC_epochs = 500
+FC_patience_scheduler = 5
+FC_patience_earlystop = 50
 
 
 ########################################################

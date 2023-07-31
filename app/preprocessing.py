@@ -1,32 +1,27 @@
 import os
+from os.path import join
 import sys
-parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-app_dir = os.path.join(parent_dir, "app")
+from pathlib import Path
+
+# include app directory into sys.path
+REMOTE= True
+parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
+app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
       sys.path.append(app_dir)
 
-from utils import config
-from utils.Scaler import StandardScaler, MinMaxScaler_0_1, MinMaxScaler_1_1
+import utils.config as config
+from utils.Scaler import MinMaxScaler_1_1
 from utils.AutoencoderDataset import AutoencoderDataset
-from pathlib import Path
-from os.path import join
 import torch as pt
 from torch.nn.functional import interpolate
 import random
 random.seed(10)
 
-
-# remote
-DATA_PATH = join(Path(os.path.abspath('')).parent, "data")
-
-# local
-DATA_PATH = join(Path(os.path.abspath('')), "data")
+DATA_PATH = join(parent_dir, "data")
 
 # DATASET
-#
 # Ma: 0.84 - alpha:  1.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0
-# Ma: 0.90 - alpha: -2.5, 1.5, 2.5, 4.0, 5.0, 6.0
-#
 
 
 def load_data(filename: str) -> pt.Tensor:
@@ -293,5 +288,5 @@ if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
     # svd_preprocesing()
-    # autoencoder_preprocessing()
-    single_flow_cond_preprocessing()
+    autoencoder_preprocessing()
+    # single_flow_cond_preprocessing()

@@ -11,18 +11,18 @@ class FullyConnected(nn.Module):
         self.output_size = output_size
 
         # input layer
-        module_list = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layer_list = [nn.Linear(input_size, hidden_size), nn.ReLU()]
         # hidden layers
         for _ in range(n_hidden_layers):
-            module_list.extend([nn.Linear(hidden_size, hidden_size), nn.ReLU()])
+            layer_list.extend([nn.Linear(hidden_size, hidden_size), nn.ReLU()])
         # output layer
-        module_list.append(nn.Linear(hidden_size, output_size))
+        layer_list.append(nn.Linear(hidden_size, output_size))
 
-        self.sequential = nn.Sequential(*module_list)
+        self.sequential = nn.Sequential(*layer_list)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x of shape: batch_size x (n_timesteps_in x n_latent)
-        # output of shape batch_size x (n_timesteps_out x n_latent)
+        # output of shape batch_size x n_latent
         return self.sequential(x)
     
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         n_hidden_layers=2)
     print(fc)
 
-    data = torch.rand(32, 8)
+    data = torch.rand(8)
     print("Input shape:     ", data.shape)
     data = fc(data)
     print("Output shape:    ", data.shape)

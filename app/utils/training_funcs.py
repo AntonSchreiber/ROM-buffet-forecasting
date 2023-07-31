@@ -174,12 +174,10 @@ def run_epoch_AR_pred(
     optimizer: pt.optim.Optimizer,
     data_loader: pt.utils.data.DataLoader,
     loss_func_latent: pt.nn.Module,
-    loss_func_orig: pt.nn.Module,
     device: str,
     results: dict,
     score_funcs: dict,
     prefix: str,
-    dim_reduct,
     ) -> float:
     """Perform one optimizing step on a model.
 
@@ -232,8 +230,7 @@ def run_epoch_AR_pred(
 
 def train_AR_pred(
     model: pt.nn.Module,
-    loss_func_latent: pt.nn.Module,
-    loss_func_orig: pt.nn.Module,
+    loss_func: pt.nn.Module,
     train_loader: pt.utils.data.DataLoader,
     val_loader: pt.utils.data.DataLoader = None,
     test_loader: pt.utils.data.DataLoader = None,
@@ -244,9 +241,7 @@ def train_AR_pred(
     log_all: bool = False,
     lr_schedule: pt.optim.lr_scheduler._LRScheduler = None,
     optimizer: pt.optim.Optimizer = None,
-    early_stopper: EarlyStopper = None,
-    decoder: ConvDecoder = None,
-    U: pt.Tensor = None
+    early_stopper: EarlyStopper = None
     ) -> pd.DataFrame:
     """Perform one optimizing step on a model.
 
@@ -255,18 +250,6 @@ def train_AR_pred(
     refer to:
     https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
     """
-    # make sure that either decoder or left singular vectors were given as arguments
-    assert (decoder is not None) ^ (U is not None), "Either decoder or left singular vectors (U) can't be None"
-
-    if decoder is not None:
-        latent_features_dim = decoder._latent.in_features
-    elif U is not None:
-        latent_features_dim = U.shape[1]
-
-    assert model.input_size % latent_features_dim == 0, f"Number of model input neurons {model.input_size} is not divisible by the number of latent dimensions {latent_features_dim} with no remainder."
-
-    dim_reduct = decoder if decoder is not None else U
-
 
     # dictionary for keeping track of training performance
     results = defaultdict(list)
@@ -285,16 +268,8 @@ def train_AR_pred(
         # model update
         model = model.train()
         total_train_time += run_epoch_AR_pred(
-            model=model, 
-            dim_reduct=dim_reduct,
-            optimizer=optimizer, 
-            data_loader=train_loader, 
-            loss_func_latent=loss_func_latent, 
-            loss_func_orig=loss_func_orig, 
-            device=device,
-            results=results, 
-            score_funcs=score_funcs, 
-            prefix="train"
+            model, optimizer, train_loader, loss_func, device,
+            results, score_funcs, prefix="train"
         )
         results["epoch"].append(e)
         results["total_time"].append(total_train_time)
@@ -306,17 +281,9 @@ def train_AR_pred(
             model = model.eval()
             with pt.no_grad():
                 _ = run_epoch_AR_pred(
-                model=model, 
-                dim_reduct=dim_reduct,
-                optimizer=optimizer, 
-                data_loader=val_loader, 
-                loss_func_latent=loss_func_latent, 
-                loss_func_orig=loss_func_orig, 
-                device=device,
-                results=results, 
-                score_funcs=score_funcs, 
-                prefix="val"
-            )
+                    model, optimizer, val_loader, loss_func, device,
+                    results, score_funcs, prefix="val"
+                )
             message += f"; Validation loss: {results['val_loss'][-1]:2.6e}"
 
         # update of learning rate
@@ -331,17 +298,9 @@ def train_AR_pred(
             model = model.eval()
             with pt.no_grad():
                 _ = run_epoch_AR_pred(
-                model=model, 
-                dim_reduct=dim_reduct,
-                optimizer=optimizer, 
-                data_loader=test_loader, 
-                loss_func_latent=loss_func_latent, 
-                loss_func_orig=loss_func_orig, 
-                device=device,
-                results=results, 
-                score_funcs=score_funcs, 
-                prefix="test"
-            )
+                    model, optimizer, test_loader, loss_func, device,
+                    results, score_funcs, prefix="test"
+                )
             message += f"; Test loss: {results['test_loss'][-1]:2.6e}"
 
         # save checkpoint
