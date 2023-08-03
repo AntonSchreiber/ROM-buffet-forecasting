@@ -51,6 +51,8 @@ VAE_lr_factor = 0.1
 VAE_patience_scheduler = 5
 VAE_patience_earlystop = 50
 
+VAE_model = "16/1_16"
+
 # Fully-Connected
 FC_batch_size = 32
 FC_learning_rate = 1e-3

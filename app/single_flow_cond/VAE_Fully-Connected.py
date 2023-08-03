@@ -30,7 +30,7 @@ import utils.config as config
 # use GPU if possible
 device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 
-VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", "16", "1_16")
+VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", config.VAE_model)
 # VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", "128", "3_128")
 DATA_PATH = join(Path(os.path.abspath('')), "data", "pipeline_single")
 OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond", "parameter_study")
@@ -38,8 +38,8 @@ OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond", "par
 N_LATENT = 16
 PRED_HORIZON = 1
 
-INPUT_WIDTHS = [10, 20, 30, 40, 50, 60, 70, 80]
-HIDDEN_SIZES = [8, 16, 32, 64, 96, 128, 256, 512, 1024]
+INPUT_WIDTHS = [30, 40, 50, 60, 70]
+HIDDEN_SIZES = [8, 16, 32, 64, 128, 256, 512, 1024]
 N_HIDDEN_LAYERS = [1, 2, 3, 4, 5, 6]
 
 def start_study():
@@ -91,6 +91,11 @@ def start_study():
             device=device,
             early_stopper=earlystopper
         ))
+        # create directory to save model state
+        subfolder = join(OUTPUT_PATH, "pred_horizon_1")
+        os.makedirs(subfolder, exist_ok=True)
+        pt.save(model.state_dict(), join(subfolder, set_key + ".pt"))
+        print("\n")
     
     # save results of training metrics
     print("========== Study finished, saving results")
