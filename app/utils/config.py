@@ -68,3 +68,5 @@ FC_patience_earlystop = 50
 
 standard_figsize_1 = (6, 3)
 standard_figsize_2 = (6, 4)
+plot_lims_cp = (-1, 1)
+plot_lims_MSE = (0, 0.018)

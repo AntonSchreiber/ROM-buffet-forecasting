@@ -155,7 +155,7 @@ def svd_preprocesing():
         X_train = pt.concat((X_train, data[train_keys[i]].flatten(0, 1)), dim=1)
     print("Shape of train_data is:  ", X_train.shape, "\n")
 
-    # fit a Standard-scaler on the training data
+    # fit a Min-Max-Scaler on the training data
     print("Fitting Scaler on training data")
     cp_scaler = MinMaxScaler_1_1().fit(X_train)
 
@@ -178,7 +178,7 @@ def autoencoder_preprocessing():
     # split and reshape the data
     train_cp, val_cp, test_cp = split_data_all(data)
 
-    # fit a Standard-scaler on the training data
+    # fit a Min-Max-Scaler on the training data
     print("Fitting Scaler on training data")
     cp_scaler = MinMaxScaler_1_1().fit(train_cp)
 
