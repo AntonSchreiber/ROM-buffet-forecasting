@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # include app directory into sys.path
-REMOTE= True
+REMOTE= False
 parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -155,11 +155,15 @@ def svd_preprocesing():
         X_train = pt.concat((X_train, data[train_keys[i]].flatten(0, 1)), dim=1)
     print("Shape of train_data is:  ", X_train.shape, "\n")
 
+    # fit a Standard-scaler on the training data
+    print("Fitting Scaler on training data")
+    cp_scaler = MinMaxScaler_1_1().fit(X_train)
+
     # save all datasets
     print("Saving ...")
-    pt.save(X_train, join(DATA_PATH, "SVD", "X_train.pt"))
-    pt.save(X_test_1, join(DATA_PATH, "SVD", "X_test_1.pt"))
-    pt.save(X_test_2, join(DATA_PATH, "SVD", "X_test_2.pt"))
+    pt.save(cp_scaler.scale(X_train), join(DATA_PATH, "SVD", "X_train.pt"))
+    pt.save(cp_scaler.scale(X_test_1), join(DATA_PATH, "SVD", "X_test_1.pt"))
+    pt.save(cp_scaler.scale(X_test_2), join(DATA_PATH, "SVD", "X_test_2.pt"))
     print("Done! \n")
 
 
@@ -287,6 +291,6 @@ def split_data_multi():
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
-    # svd_preprocesing()
-    autoencoder_preprocessing()
+    svd_preprocesing()
+    # autoencoder_preprocessing()
     # single_flow_cond_preprocessing()
