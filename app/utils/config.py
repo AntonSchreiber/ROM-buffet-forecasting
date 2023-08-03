@@ -66,6 +66,10 @@ FC_patience_earlystop = 50
 # Plots
 ########################################################
 
+U_inf = 211
+c_mean = 0.1965
+timesteps_per_second = 2000
+
 standard_figsize_1 = (6, 3)
 standard_figsize_2 = (6, 4)
 plot_lims_cp = (-1, 1)
