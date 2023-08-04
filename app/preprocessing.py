@@ -136,7 +136,7 @@ def svd_preprocesing():
     keys = list(data.keys())
 
     # sample two random keys for test data except the outer ones
-    test_keys = random.sample(keys[1:-1], 2)
+    test_keys = config.test_keys
     print("The test keys are:       ", test_keys)
 
     # assemble test data
@@ -155,15 +155,24 @@ def svd_preprocesing():
         X_train = pt.concat((X_train, data[train_keys[i]].flatten(0, 1)), dim=1)
     print("Shape of train_data is:  ", X_train.shape, "\n")
 
+    # # center datasets by temporal mean
+    # X_train_centered = X_train- X_train.mean(dim=1).unsqueeze(-1)
+    # X_test_1_centered = X_test_1 - X_test_1.mean(dim=1).unsqueeze(-1)
+    # X_test_2_centered = X_test_2 - X_test_2_centered.mean(dim=1).unsqueeze(-1)
+
     # fit a Min-Max-Scaler on the training data
     print("Fitting Scaler on training data")
-    cp_scaler = MinMaxScaler_1_1().fit(X_train)
+    scaler = MinMaxScaler_1_1().fit(X_train)
+    # scaler_centered = MinMaxScaler_1_1().fit(X_train_centered)
 
     # save all datasets
     print("Saving ...")
-    pt.save(cp_scaler.scale(X_train), join(DATA_PATH, "SVD", "X_train.pt"))
-    pt.save(cp_scaler.scale(X_test_1), join(DATA_PATH, "SVD", "X_test_1.pt"))
-    pt.save(cp_scaler.scale(X_test_2), join(DATA_PATH, "SVD", "X_test_2.pt"))
+    pt.save(scaler.scale(X_train), join(DATA_PATH, "SVD", "X_train.pt"))
+    pt.save(scaler.scale(X_test_1), join(DATA_PATH, "SVD", "X_test_1.pt"))
+    pt.save(scaler.scale(X_test_2), join(DATA_PATH, "SVD", "X_test_2.pt"))
+    # pt.save(scaler_centered.scale(X_train_centered), join(DATA_PATH, "SVD", "X_train_centered.pt"))
+    # pt.save(scaler_centered.scale(X_test_1_centered), join(DATA_PATH, "SVD", "X_test_1_centered.pt"))
+    # pt.save(scaler_centered.scale(X_test_2_centered), join(DATA_PATH, "SVD", "X_test_2_centered.pt"))
     print("Done! \n")
 
 
