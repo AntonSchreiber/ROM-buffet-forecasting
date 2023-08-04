@@ -72,5 +72,8 @@ timesteps_per_second = 2000
 
 standard_figsize_1 = (6, 3)
 standard_figsize_2 = (6, 4)
+plot_lims_MSE_general = [9e-4, 5.5e-3]
+plot_lims_R_squarred = [0.95, 1]
+plot_lims_MSE_spatial = (0, 0.018)
+plot_lims_MSE_temporal = [7e-4, 6.8e-3]
 plot_lims_cp = (-1, 1)
-plot_lims_MSE = (0, 0.018)
