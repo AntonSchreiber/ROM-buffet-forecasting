@@ -25,28 +25,30 @@ from utils.FullyConnected import FullyConnected
 from utils.CNN_VAE import make_encoder_model, make_decoder_model
 from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_AR_pred
+from utils.helper_funcs import delete_directory_contents
 import utils.config as config
 
 # use GPU if possible
 device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 
 VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", config.VAE_model)
-# VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", "128", "3_128")
 DATA_PATH = join(Path(os.path.abspath('')), "data", "pipeline_single")
-OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond", "parameter_study")
+OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond", "parameter_study", "pred_horizon_1")
 
-N_LATENT = 16
+N_LATENT = 32
 PRED_HORIZON = 1
 
-INPUT_WIDTHS = [30, 40, 50, 60, 70]
-HIDDEN_SIZES = [8, 16, 32, 64, 128, 256, 512, 1024]
-N_HIDDEN_LAYERS = [1, 2, 3, 4, 5, 6]
+INPUT_WIDTHS = [35, 40, 45, 50, 55]
+HIDDEN_SIZES = [8, 16, 32, 64, 128, 256, 512]
+N_HIDDEN_LAYERS = [1, 2, 3, 4]
 
 def start_study():
     print("Training Fully-Connected models with varying model parameters: ")
     print("     input width:                ", INPUT_WIDTHS)
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
     print("     number of hidden layers:    ", N_HIDDEN_LAYERS)
+
+    delete_directory_contents(OUTPUT_PATH)
 
     # start encoding
     train_enc, test_enc = encode_datasets()
@@ -92,9 +94,8 @@ def start_study():
             early_stopper=earlystopper
         ))
         # create directory to save model state
-        subfolder = join(OUTPUT_PATH, "pred_horizon_1")
-        os.makedirs(subfolder, exist_ok=True)
-        pt.save(model.state_dict(), join(subfolder, set_key + ".pt"))
+        os.makedirs(OUTPUT_PATH, exist_ok=True)
+        pt.save(model.state_dict(), join(OUTPUT_PATH, set_key + ".pt"))
         print("\n")
     
     # save results of training metrics

@@ -43,15 +43,14 @@ SVD_rank = 250
 # CNN-VAE
 VAE_input_channels = (1, 64, 128, 256, 512)
 VAE_output_channels = (512, 256, 128, 64, 1)
-VAE_latent_size = 256
 VAE_epochs = 500
 VAE_batch_size = 32
 VAE_learning_rate = 1e-4
 VAE_lr_factor = 0.1
 VAE_patience_scheduler = 5
 VAE_patience_earlystop = 50
-
-VAE_model = "16/1_16"
+VAE_latent_size = 32
+VAE_model = "32/8_32"
 
 # Fully-Connected
 FC_batch_size = 32
