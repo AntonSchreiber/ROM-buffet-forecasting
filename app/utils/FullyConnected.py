@@ -25,6 +25,9 @@ class FullyConnected(nn.Module):
         # x of shape: batch_size x (n_timesteps_in x n_latent)
         # output of shape batch_size x n_latent
         return self.sequential(x)
+
+    def load(self, path: str="", device: str="cpu"):
+        self.load_state_dict(torch.load(path, map_location=torch.device(device)))
     
 
 # function to create a Fully-Connected network (not necessary, but for consistency)

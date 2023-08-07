@@ -48,7 +48,7 @@ def start_study():
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
     print("     number of hidden layers:    ", N_HIDDEN_LAYERS)
 
-    # delete_directory_contents(OUTPUT_PATH)
+    delete_directory_contents(OUTPUT_PATH)
 
     # start encoding
     train_enc, test_enc = reduce_datasets()
@@ -112,6 +112,7 @@ def reduce_datasets():
     # load pre-trained autoencoder model
     autoencoder = make_VAE_model(n_latent=N_LATENT, device=device)
     autoencoder.load(VAE_PATH)
+    autoencoder.eval()
 
     # encode datasets 
     print("Encoding datasets ...")
