@@ -257,10 +257,9 @@ def single_flow_cond_preprocessing():
     print("Creating SVD and VAE datasets for the single flow condition training pipeline ...")
     # load interpolated dataset and pick a flow condition
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
-    flow_cond = list(data.keys())[3]
-    data = data[flow_cond]
+    data = data[config.single_flow_cond]
     data.shape
-    print("Flow condtion:       " ,flow_cond, "\n")
+    print("Flow condtion:       " ,config.single_flow_cond, "\n")
 
     # split and reshape the data
     train_cp, test_cp = split_data_single(data)

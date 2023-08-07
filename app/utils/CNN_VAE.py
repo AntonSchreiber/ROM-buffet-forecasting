@@ -15,6 +15,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import utils.config as config
+from utils.Scaler import MinMaxScaler_1_1
 
 
 def power_of_two(shape: Tuple[int]) -> bool:
@@ -119,7 +120,7 @@ class ConvEncoder(nn.Module):
             return mean + self._dist.sample(mean.shape).to(x.device) * torch.exp(0.5*log_var)
         else:
             return self._latent_mean(x)
-
+        
 
 class ConvDecoder(nn.Module):
     def __init__(self,
@@ -219,10 +220,15 @@ class Autoencoder(nn.Module):
         torch.save(self._encoder.state_dict(), path + "_encoder.pt")
         torch.save(self._decoder.state_dict(), path + "_decoder.pt")
 
-    def load(self, path: str=""):
-        self._encoder.load_state_dict(torch.load(path + "_encoder.pt", map_location=torch.device('cpu')))
-        self._decoder.load_state_dict(torch.load(path + "_decoder.pt", map_location=torch.device('cpu')))
+    def load(self, path: str="", device: str="cpu"):
+        self._encoder.load_state_dict(torch.load(path + "_encoder.pt", map_location=torch.device(device)))
+        self._decoder.load_state_dict(torch.load(path + "_decoder.pt", map_location=torch.device(device)))
 
+    def encode_dataset(self, dataset: torch.Tensor):
+        assert len(dataset.shape) == 3 and f"Datasets needs 3 dimensions [Height, Width, Timestep]"
+        with torch.no_grad():
+            return torch.stack([self._encoder(dataset[:, :, n].unsqueeze(0).unsqueeze(0)).squeeze(0).detach() for n in range(dataset.shape[2])], dim=1)
+        
 
 # function to create VAE model
 def make_VAE_model(n_latent: int, device: str) -> nn.Module:

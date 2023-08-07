@@ -1,5 +1,6 @@
 # python file with often used helper functions
 import os
+from os.path import join
 
 
 def delete_directory_contents(directory_path):
@@ -10,7 +11,7 @@ def delete_directory_contents(directory_path):
 
         # Loop through the list and remove each file and subdirectory
         for file_name in file_list:
-            file_path = os.path.join(directory_path, file_name)
+            file_path = join(directory_path, file_name)
             if os.path.isfile(file_path):
                 os.remove(file_path)
             elif os.path.isdir(file_path):

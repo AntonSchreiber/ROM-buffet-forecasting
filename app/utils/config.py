@@ -25,6 +25,7 @@ mini_val_per_cond = 4
 mini_test_per_cond = 4
 
 # Pre-Processing for single flow cond pipeline
+single_flow_cond = 'ma0.84_alpha4.00'
 single_flow_cond_train_share = .8   # 80% training data -> 20% test data
 
 ########################################################
