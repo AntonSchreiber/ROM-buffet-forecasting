@@ -1,3 +1,9 @@
+"""
+These training loop functions are modified versions of the functions provided in chapter 5 of 'Inside Deep Learning' by Edward Raff;
+    refer to: https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
+    and: https://github.com/AndreWeiner/ml-cfd-lecture/blob/main/notebooks/ml_intro.ipynb 
+"""
+
 import sys
 import os
 from os.path import join
@@ -23,13 +29,7 @@ def run_epoch_VAE(
     score_funcs: dict,
     prefix: str
     ) -> float:
-    """Perform one optimizing step on a model.
-
-    This loop is a slightly modified version of 'run_epoch'
-    provided in chapter 5 of 'Inside Deep Learning' by Edward Raff;
-    refer to:
-    https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
-    """
+    """Perform one epoch with optimizing steps on an Convolutional-Variational-Autoencoder model"""
 
     # keeping track of loss, predictions, and time
     running_loss, labels_true, labels_pred = [], [], []
@@ -76,13 +76,7 @@ def train_VAE(
     optimizer: pt.optim.Optimizer = None,
     early_stopper: EarlyStopper = None
     ) -> pd.DataFrame:
-    """Perform one optimizing step on a model.
-
-    This function is a slightly modified version of 'train_network'
-    provided in chapter 5 of 'Inside Deep Learning' by Edward Raff;
-    refer to:
-    https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
-    """
+    """Perform the training of a Convoutional-Variational-Autoencoder model"""
 
     # dictionary for keeping track of training performance
     results = defaultdict(list)
@@ -173,19 +167,14 @@ def run_epoch_AR_pred(
     model: pt.nn.Module,
     optimizer: pt.optim.Optimizer,
     data_loader: pt.utils.data.DataLoader,
-    loss_func_latent: pt.nn.Module,
+    loss_func: pt.nn.Module,
     device: str,
     results: dict,
     score_funcs: dict,
     prefix: str,
+    pred_horizon: int
     ) -> float:
-    """Perform one optimizing step on a model.
-
-    This loop is a slightly modified version of 'run_epoch'
-    provided in chapter 5 of 'Inside Deep Learning' by Edward Raff;
-    refer to:
-    https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
-    """
+    """Perform one epoch with optimizing steps on an autoregressively trained model"""
 
     # keeping track of loss, predictions, and time
     running_loss, labels_true, labels_pred = [], [], []
@@ -197,23 +186,13 @@ def run_epoch_AR_pred(
         targets = targets.flatten(1, 2).to(device)
         
         preds = model(inputs)
-        assert preds.shape == targets.shape
-        loss_latent = loss_func_latent(targets, preds)
-
-        # TODO add full space loss
-        # with pt.no_grad():
-        #     preds_dec = pt.stack([decoder(preds[n]).detach() for n in range(len(train_data))], dim=1)
-        # loss_orig = loss_func_orig()
-
-        # combine losses with appropriate weights
-        total_loss = loss_latent
-        # total_loss = 0.9 * loss_latent + 0.1 * loss_orig
+        loss = loss_func(targets, preds)
 
         if model.training:
-            total_loss.backward()
+            loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-        running_loss.append(total_loss.item())
+        running_loss.append(loss.item())
 
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
@@ -243,13 +222,7 @@ def train_AR_pred(
     optimizer: pt.optim.Optimizer = None,
     early_stopper: EarlyStopper = None
     ) -> pd.DataFrame:
-    """Perform one optimizing step on a model.
-
-    This function is a slightly modified version of 'train_network'
-    provided in chapter 5 of 'Inside Deep Learning' by Edward Raff;
-    refer to:
-    https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
-    """
+    """Perform the autoregressive training of a model"""
 
     # dictionary for keeping track of training performance
     results = defaultdict(list)
