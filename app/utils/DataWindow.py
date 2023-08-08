@@ -26,9 +26,13 @@ class DataWindow():
         self.pred_slice = slice(self.pred_start, None)
     
     def rolling_window(self, dataset_length: int):
+        """ computes a rolling window with indices over full dataset length """
         assert dataset_length >= self.total_window_size, f"Dataset length must be >= total window size"
-        # computes the rolling window with indices over full dataset length
-        rolling_window = pt.arange(0, dataset_length).unfold(dimension=0, size=self.total_window_size, step=self.pred_horizon)
+
+        # calculate possible number of windows to prevent getting out of index bounds; compute rolling window
+        num_windows = dataset_length - self.total_window_size + 1    
+        print(num_windows)
+        rolling_window = pt.arange(dataset_length).unfold(dimension=0, size=self.total_window_size, step=1)
 
         # with slice objects, split each window into input and prediction sequence
         input_idx = pt.stack([sequence[self.input_slice] for sequence in rolling_window])
@@ -42,7 +46,7 @@ class DataWindow():
         # iterate over feature-label index pairs in rolling window and assign corresponding data pairs
         for input_idx, pred_idx in zip(*self.rolling_window(dataset_length=data.shape[1])):
             input_seq.append(data[:, input_idx])
-            target_seq.append(data[:, pred_idx])
+            target_seq.append(data[:, pred_idx[-1]])        # only include last target since all other are not needed during training
 
         # stack to pt.Tensors
         input_seq = pt.stack(input_seq)

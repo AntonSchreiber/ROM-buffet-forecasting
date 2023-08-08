@@ -3,24 +3,24 @@ from utils.DataWindow import DataWindow
 import torch as pt
 
 # create data tensor
-num_timesteps = 7
+num_timesteps = 8
 latent_space_size = 3
 
-values = pt.arange(1, num_timesteps + 1).unsqueeze(0)
+values = pt.arange(num_timesteps).unsqueeze(0)
 data_tensor = values.repeat(latent_space_size, 1)
 
 # print("Data tensor: \n", data_tensor)
 
 # looks like this:
-# tensor([[1, 2, 3, 4, 5, 6, 7, 8],
-#         [1, 2, 3, 4, 5, 6, 7, 8],
-#         [1, 2, 3, 4, 5, 6, 7, 8]])
+# tensor([[0, 1, 2, 3, 4, 5, 6, 7],
+#         [0, 1, 2, 3, 4, 5, 6, 7],
+#         [0, 1, 2, 3, 4, 5, 6, 7]]
 
 # set and compute DataWindow Variables
 input_width = 4
-pred_horizon = 1
-num_windows = (num_timesteps - input_width) // pred_horizon
-
+pred_horizon = 2
+total_window_size = input_width + pred_horizon
+num_windows = num_timesteps - total_window_size + 1
 
 
 class TestDataWindow(unittest.TestCase):

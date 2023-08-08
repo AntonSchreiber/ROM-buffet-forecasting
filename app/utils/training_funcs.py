@@ -172,7 +172,7 @@ def run_epoch_AR_pred(
     results: dict,
     score_funcs: dict,
     prefix: str,
-    pred_horizon: int
+    pred_horizon: int = 1
     ) -> float:
     """Perform one epoch with optimizing steps on an autoregressively trained model"""
 
@@ -181,12 +181,12 @@ def run_epoch_AR_pred(
     start_time = time()
 
     # loop over all batches
-    for inputs, targets in data_loader:
+    for inputs, target in data_loader:
         inputs = inputs.flatten(1, 2).to(device)
-        targets = targets.flatten(1, 2).to(device)
+        target = target.flatten(1, 2).to(device)
         
-        preds = model(inputs)
-        loss = loss_func(targets, preds)
+        pred = model(inputs)
+        loss = loss_func(target, pred)
 
         if model.training:
             loss.backward()
@@ -196,8 +196,8 @@ def run_epoch_AR_pred(
 
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
-            labels_true.extend(targets.detach().cpu().tolist())
-            labels_pred.extend(preds.detach().cpu().tolist())
+            labels_true.extend(target.detach().cpu().tolist())
+            labels_pred.extend(pred.detach().cpu().tolist())
 
     # keep track of performance
     results[f"{prefix}_loss"].append(sum(running_loss) / len(running_loss))
