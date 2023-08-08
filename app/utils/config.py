@@ -29,10 +29,11 @@ single_flow_cond = 'ma0.84_alpha4.00'
 single_flow_cond_train_share = .8   # 80% training data -> 20% test data
 
 ########################################################
-# SVD/ VAE Evaluation
+# Model Optimization
 ########################################################
 
 timestep_reconstruction = 100
+timestep_reconstruction_single = 450
 
 ########################################################
 # Model parameters
@@ -77,3 +78,4 @@ plot_lims_R_squarred = [0.95, 1]
 plot_lims_MSE_spatial = (0, 0.018)
 plot_lims_MSE_temporal = [7e-4, 6.8e-3]
 plot_lims_cp = (-1, 1)
+plot_lims_MSE_reconstruction = [0, 0.05]

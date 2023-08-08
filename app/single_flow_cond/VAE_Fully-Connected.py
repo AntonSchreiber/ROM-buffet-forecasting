@@ -22,7 +22,7 @@ pt.manual_seed(0)
 from utils.Scaler import MinMaxScaler_1_1
 from utils.TimeSeriesDataset import TimeSeriesDataset
 from utils.FullyConnected import FullyConnected
-from utils.CNN_VAE import make_VAE_model, make_encoder_model, make_decoder_model
+from utils.CNN_VAE import make_VAE_model
 from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_AR_pred
 from utils.helper_funcs import delete_directory_contents
@@ -33,7 +33,7 @@ device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 
 VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", config.VAE_model)
 DATA_PATH = join(Path(os.path.abspath('')), "data", "single_flow_cond")
-OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "single_flow_cond", "parameter_study", "pred_horizon_1")
+OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_1")
 
 N_LATENT = 32
 PRED_HORIZON = 1
@@ -106,8 +106,9 @@ def start_study():
 def reduce_datasets():
     # load data
     print("Loading datasets ... ")
-    train_data = pt.load(join(DATA_PATH, "train_dataset.pt"))
-    test_data = pt.load(join(DATA_PATH, "test_dataset.pt"))
+    train_data = pt.load(join(DATA_PATH, "VAE_train.pt"))
+    test_data = pt.load(join(DATA_PATH, "VAE_test.pt"))
+    print("     min and max train cp prior encoding:     ", train_data.min().item(), train_data.max().item())
 
     # load pre-trained autoencoder model
     autoencoder = make_VAE_model(n_latent=N_LATENT, device=device)
@@ -120,13 +121,16 @@ def reduce_datasets():
     test_enc = autoencoder.encode_dataset(test_data)
     print("     Shape of encoded train data:     ", train_enc.shape)
     print("     Shape of encoded test data:      ", test_enc.shape, "\n")
+    print("     min and max train cp after encoding:     ", train_enc.min().item(), train_enc.max().item())
 
     # scale data
     print("Scaling encoded data to [-1, 1] ... ")
-    print("     min and max train cp prior scaling:     ", train_enc.min().item(), train_enc.max().item())
     scaler = MinMaxScaler_1_1().fit(train_enc)
     train_enc, test_enc = scaler.scale(train_enc), scaler.scale(test_enc)
     print("     min and max train cp after scaling:     ", train_enc.min().item(), train_enc.max().item(), "\n")    
+
+    print("Saving scaler for inference")
+    pt.save(scaler, join(OUTPUT_PATH, "scaler.pt"))
 
     return train_enc, test_enc
 

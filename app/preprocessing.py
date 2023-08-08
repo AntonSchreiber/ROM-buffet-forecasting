@@ -155,24 +155,16 @@ def svd_preprocesing():
         X_train = pt.concat((X_train, data[train_keys[i]].flatten(0, 1)), dim=1)
     print("Shape of train_data is:  ", X_train.shape, "\n")
 
-    # # center datasets by temporal mean
-    # X_train_centered = X_train- X_train.mean(dim=1).unsqueeze(-1)
-    # X_test_1_centered = X_test_1 - X_test_1.mean(dim=1).unsqueeze(-1)
-    # X_test_2_centered = X_test_2 - X_test_2_centered.mean(dim=1).unsqueeze(-1)
-
     # fit a Min-Max-Scaler on the training data
     print("Fitting Scaler on training data")
     scaler = MinMaxScaler_1_1().fit(X_train)
-    # scaler_centered = MinMaxScaler_1_1().fit(X_train_centered)
+    pt.save(scaler, join(DATA_PATH, "SVD_scaler.pt"))
 
     # save all datasets
     print("Saving ...")
     pt.save(scaler.scale(X_train), join(DATA_PATH, "SVD", "X_train.pt"))
     pt.save(scaler.scale(X_test_1), join(DATA_PATH, "SVD", "X_test_1.pt"))
     pt.save(scaler.scale(X_test_2), join(DATA_PATH, "SVD", "X_test_2.pt"))
-    # pt.save(scaler_centered.scale(X_train_centered), join(DATA_PATH, "SVD", "X_train_centered.pt"))
-    # pt.save(scaler_centered.scale(X_test_1_centered), join(DATA_PATH, "SVD", "X_test_1_centered.pt"))
-    # pt.save(scaler_centered.scale(X_test_2_centered), join(DATA_PATH, "SVD", "X_test_2_centered.pt"))
     print("Done! \n")
 
 
@@ -189,13 +181,14 @@ def autoencoder_preprocessing():
 
     # fit a Min-Max-Scaler on the training data
     print("Fitting Scaler on training data")
-    cp_scaler = MinMaxScaler_1_1().fit(train_cp)
+    scaler = MinMaxScaler_1_1().fit(train_cp)
+    pt.save(scaler, join(DATA_PATH, "VAE_scaler.pt"))
 
     # scale all tensors and create custom Datasets
     print("Making AutoencoderDatasets with the scaled cp")
-    train_dataset = AutoencoderDataset(cp_scaler.scale(train_cp))
-    val_dataset = AutoencoderDataset(cp_scaler.scale(val_cp))
-    test_dataset = AutoencoderDataset(cp_scaler.scale(test_cp))    
+    train_dataset = AutoencoderDataset(scaler.scale(train_cp))
+    val_dataset = AutoencoderDataset(scaler.scale(val_cp))
+    test_dataset = AutoencoderDataset(scaler.scale(test_cp))    
 
     # save all datasets
     print("Saving ...")
@@ -262,23 +255,29 @@ def single_flow_cond_preprocessing():
     print("Flow condtion:       " ,config.single_flow_cond, "\n")
 
     # split and reshape the data
-    train_cp, test_cp = split_data_single(data)
+    train, test = split_data_single(data)
 
-    # fit a Standard-scaler on the training data
-    print("Fitting Scaler on training data \n")
-    cp_scaler = MinMaxScaler_1_1().fit(train_cp)
+    # load pre-trained scalers that were fitted on the whole VAE and SVD datasets
+    print("Loading scalers \n")
+    VAE_scaler = pt.load(join(DATA_PATH, "VAE_scaler.pt"))
+    SVD_scaler = pt.load(join(DATA_PATH, "SVD_scaler.pt"))
 
-    # scale tensors and create custom VAE datasets
     print("Scaling datasets ...")
-    train_cp = cp_scaler.scale(train_cp)
-    test_cp = cp_scaler.scale(test_cp)
-    print("Shape of train:      ", train_cp.shape)
-    print("Shape of test:       ", test_cp.shape, "\n")
+    VAE_train = VAE_scaler.scale(train)
+    VAE_test = VAE_scaler.scale(test)
+    SVD_train = SVD_scaler.scale(train.flatten(0,1))
+    SVD_test = SVD_scaler.scale(test.flatten(0,1))
+    print("Shape of VAE train:      ", VAE_train.shape)
+    print("Shape of VAE test:       ", VAE_test.shape, "\n")
+    print("Shape of SVD train:      ", SVD_train.shape)
+    print("Shape of SVD test:       ", SVD_test.shape, "\n")
 
     # save all datasets
     print("Saving ...")
-    pt.save(train_cp, join(DATA_PATH, "pipeline_single", "train_dataset.pt"))
-    pt.save(test_cp, join(DATA_PATH, "pipeline_single", "test_dataset.pt"))
+    pt.save(VAE_train, join(DATA_PATH, "single_flow_cond", "VAE_train.pt"))
+    pt.save(VAE_test, join(DATA_PATH, "single_flow_cond", "VAE_test.pt"))
+    pt.save(SVD_train, join(DATA_PATH, "single_flow_cond", "SVD_train.pt"))
+    pt.save(SVD_test, join(DATA_PATH, "single_flow_cond", "SVD_test.pt"))
     print("Done! \n")
 
 
@@ -299,6 +298,6 @@ def split_data_multi():
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
-    svd_preprocesing()
+    # svd_preprocesing()
     # autoencoder_preprocessing()
-    # single_flow_cond_preprocessing()
+    single_flow_cond_preprocessing()

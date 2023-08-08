@@ -21,3 +21,11 @@ def delete_directory_contents(directory_path):
         print(f"Successfully deleted all contents in {directory_path}.")
     except Exception as e:
         print(f"Error occurred while deleting contents in {directory_path}: {e}")
+
+
+def find_target_index_in_dataset(nested_list, target_id):
+    """ Inside the rolling data window, find the index of the inputs-targets-pair that is used to predict the snapshot with target_id"""
+    for index, inner_list in enumerate(nested_list):
+        if inner_list[-1] == target_id:
+            return index
+    return -1
