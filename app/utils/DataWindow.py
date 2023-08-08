@@ -2,13 +2,13 @@ import torch as pt
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 
 
-class TimeSeriesDataset():
-    """Class to create TimeSeriesDatasets from a dataset in latent space with (n, timesteps) where n is the number of dimensions in the latent space
+class DataWindow():
+    """Class to create DataWindows from a dataset in latent space with (n, timesteps) where n is the number of dimensions in the latent space
 
         The make_dataset function creates a rolling window that contains user-defined feature-label pairs to be fed through prediction models
     """
     def __init__(self, train: pt.Tensor, val: pt.Tensor=pt.Tensor(), test: pt.Tensor=pt.Tensor(), 
-                 input_width: int=5, pred_horizon: int=1) -> None:
+                 input_width: int=40, pred_horizon: int=1) -> None:
         self.train = train
         self.val = val
         self.test = test
@@ -38,18 +38,18 @@ class TimeSeriesDataset():
     
     def make_dataset(self, data):
         input_seq = []
-        pred_seq = []
+        target_seq = []
         # iterate over feature-label index pairs in rolling window and assign corresponding data pairs
         for input_idx, pred_idx in zip(*self.rolling_window(dataset_length=data.shape[1])):
             input_seq.append(data[:, input_idx])
-            pred_seq.append(data[:, pred_idx])
+            target_seq.append(data[:, pred_idx])
 
         # stack to pt.Tensors
         input_seq = pt.stack(input_seq)
-        pred_seq = pt.stack(pred_seq)
+        target_seq = pt.stack(target_seq)
 
-        # store all feature-label pairs in a TensorDataset
-        return TensorDataset(input_seq, pred_seq)
+        # store all feature-label pairs in a Dataset object
+        return TimeSeriesTensorDataset(input_seq, target_seq)            
 
     @property
     def train_dataset(self):
@@ -63,3 +63,19 @@ class TimeSeriesDataset():
     def test_dataset(self):
         return self.make_dataset(self.test)
     
+
+class TimeSeriesTensorDataset(TensorDataset):
+    def __init__(self, inputs, targets):
+        super().__init__(inputs, targets)
+
+    def __len__(self):
+        return super().__len__()
+    
+    def __getitem__(self, index):
+        return super().__getitem__(index)
+    
+
+class TimeSeriesDataset(Dataset):
+    def __init__(self, inputs, targets):
+        self.inputs = inputs
+        self.targets = targets

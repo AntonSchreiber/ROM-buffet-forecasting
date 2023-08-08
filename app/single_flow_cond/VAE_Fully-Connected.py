@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
 from utils.Scaler import MinMaxScaler_1_1
-from utils.TimeSeriesDataset import TimeSeriesDataset
+from utils.DataWindow import DataWindow
 from utils.FullyConnected import FullyConnected
 from utils.CNN_VAE import make_VAE_model
 from utils.EarlyStopper import EarlyStopper
@@ -63,10 +63,10 @@ def start_study():
         set_key = f"{input_width}_{hidden_size}_{n_hidden_layers}"
         print("--input_width={}, hidden_size={} and n_hidden={}".format(input_width, hidden_size, n_hidden_layers))
 
-        # create TimeSeriesDataset object to create windows of data, feed into DataLoaders
-        timeseriesdataset = TimeSeriesDataset(train=train_enc, test=test_enc, input_width=input_width, pred_horizon=PRED_HORIZON)
-        train_loader = DataLoader(timeseriesdataset.train_dataset, batch_size=config.FC_batch_size, shuffle=True)
-        test_loader = DataLoader(timeseriesdataset.test_dataset, batch_size=config.FC_batch_size, shuffle=True)
+        # create DataWindow object to create windows of data, feed into DataLoaders
+        data_window = DataWindow(train=train_enc, test=test_enc, input_width=input_width, pred_horizon=PRED_HORIZON)
+        train_loader = DataLoader(data_window.train_dataset, batch_size=32, shuffle=True)
+        test_loader = DataLoader(data_window.test_dataset, batch_size=32, shuffle=True)
         
         # initialize model and utilities
         model = FullyConnected(

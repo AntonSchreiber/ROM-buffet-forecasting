@@ -1,5 +1,5 @@
 import unittest
-from TimeSeriesDataset import TimeSeriesDataset
+from utils.DataWindow import DataWindow
 import torch as pt
 
 # create data tensor
@@ -26,7 +26,7 @@ num_windows = (num_timesteps - input_width) // pred_horizon
 class TestDataWindow(unittest.TestCase):
     def test_rolling_window(self):
         # initialize DataWindow object and call rolling_window method
-        data_window = TimeSeriesDataset(data_tensor, input_width=input_width, pred_horizon=pred_horizon)
+        data_window = DataWindow(data_tensor, input_width=input_width, pred_horizon=pred_horizon)
         input_idx, pred_idx = data_window.rolling_window(dataset_length=num_timesteps)
         
         # check dimensions of the windows
@@ -38,7 +38,7 @@ class TestDataWindow(unittest.TestCase):
     
     def test_make_dataset(self):
         # initialize DataWindow object and call rolling_window method
-        data_window = TimeSeriesDataset(data_tensor, input_width=input_width, pred_horizon=pred_horizon)
+        data_window = DataWindow(data_tensor, input_width=input_width, pred_horizon=pred_horizon)
         train = data_window.train_dataset
         self.assertEqual(len(train), num_windows)
 

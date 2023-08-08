@@ -17,7 +17,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
-from utils.TimeSeriesDataset import TimeSeriesDataset
+from utils.DataWindow import DataWindow
 from utils.FullyConnected import FullyConnected
 from utils.training_funcs import train_AR_pred
 import utils.config as config
@@ -47,11 +47,11 @@ if __name__ == '__main__':
     print("Shape of reduced train data:     ", train_red.shape)
     print("Shape of reduced test data:      ", test_red.shape)
 
-    # create TimeSeriesDataset object to create windows of data, feed into DataLoaders
-    timeseriesdataset = TimeSeriesDataset(train=train_red, test=test_red, input_width=INPUT_WIDTH, pred_horizon=PRED_HORIZON)
-    # print(timeseriesdataset.rolling_window(100))
-    train_loader = DataLoader(timeseriesdataset.train_dataset, batch_size=32, shuffle=True)
-    test_loader = DataLoader(timeseriesdataset.test_dataset, batch_size=32, shuffle=True)
+    # create DataWindow object to create windows of data, feed into DataLoaders
+    data_window = DataWindow(train=train_red, test=test_red, input_width=INPUT_WIDTH, pred_horizon=PRED_HORIZON)
+    # print(data_window.rolling_window(100))
+    train_loader = DataLoader(data_window.train_dataset, batch_size=32, shuffle=True)
+    test_loader = DataLoader(data_window.test_dataset, batch_size=32, shuffle=True)
 
     # initialize prediction model
     hidden_size = 1024
