@@ -29,9 +29,7 @@ class DataWindow():
         """ computes a rolling window with indices over full dataset length """
         assert dataset_length >= self.total_window_size, f"Dataset length must be >= total window size"
 
-        # calculate possible number of windows to prevent getting out of index bounds; compute rolling window
-        num_windows = dataset_length - self.total_window_size + 1    
-        print(num_windows)
+        # compute rolling window
         rolling_window = pt.arange(dataset_length).unfold(dimension=0, size=self.total_window_size, step=1)
 
         # with slice objects, split each window into input and prediction sequence

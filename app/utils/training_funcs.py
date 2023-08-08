@@ -7,9 +7,6 @@ These training loop functions are modified versions of the functions provided in
 import sys
 import os
 from os.path import join
-import utils.config as config
-from utils.CNN_VAE import ConvDecoder
-from utils.EarlyStopper import EarlyStopper
 from glob import glob
 from typing import List, Tuple
 from shutil import copy
@@ -17,6 +14,10 @@ from time import time
 from collections import defaultdict
 import torch as pt
 import pandas as pd
+
+import utils.config as config
+from utils.EarlyStopper import EarlyStopper
+from utils.helper_funcs import shift_input_sequence
 
 
 def run_epoch_VAE(
@@ -183,9 +184,13 @@ def run_epoch_AR_pred(
     # loop over all batches
     for inputs, target in data_loader:
         inputs = inputs.flatten(1, 2).to(device)
-        target = target.flatten(1, 2).to(device)
+        target = target.to(device)
         
-        pred = model(inputs)
+        for step in range(pred_horizon):
+            if step != 0:
+                inputs = shift_input_sequence(orig_seq=inputs, new_pred=pred)
+            pred = model(inputs)
+
         loss = loss_func(target, pred)
 
         if model.training:
@@ -220,7 +225,8 @@ def train_AR_pred(
     log_all: bool = False,
     lr_schedule: pt.optim.lr_scheduler._LRScheduler = None,
     optimizer: pt.optim.Optimizer = None,
-    early_stopper: EarlyStopper = None
+    early_stopper: EarlyStopper = None,
+    pred_horizon: int = 1,
     ) -> pd.DataFrame:
     """Perform the autoregressive training of a model"""
 
@@ -242,7 +248,7 @@ def train_AR_pred(
         model = model.train()
         total_train_time += run_epoch_AR_pred(
             model, optimizer, train_loader, loss_func, device,
-            results, score_funcs, prefix="train"
+            results, score_funcs, prefix="train", pred_horizon=pred_horizon
         )
         results["epoch"].append(e)
         results["total_time"].append(total_train_time)
@@ -255,7 +261,7 @@ def train_AR_pred(
             with pt.no_grad():
                 _ = run_epoch_AR_pred(
                     model, optimizer, val_loader, loss_func, device,
-                    results, score_funcs, prefix="val"
+                    results, score_funcs, prefix="val", pred_horizon=pred_horizon
                 )
             message += f"; Validation loss: {results['val_loss'][-1]:2.6e}"
 
@@ -272,7 +278,7 @@ def train_AR_pred(
             with pt.no_grad():
                 _ = run_epoch_AR_pred(
                     model, optimizer, test_loader, loss_func, device,
-                    results, score_funcs, prefix="test"
+                    results, score_funcs, prefix="test", pred_horizon=pred_horizon
                 )
             message += f"; Test loss: {results['test_loss'][-1]:2.6e}"
 

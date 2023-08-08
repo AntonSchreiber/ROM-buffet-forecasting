@@ -33,10 +33,10 @@ device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 
 VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", config.VAE_model)
 DATA_PATH = join(Path(os.path.abspath('')), "data", "single_flow_cond")
-OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_1")
+OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_5")
 
 N_LATENT = 32
-PRED_HORIZON = 1
+PRED_HORIZON = 5
 
 INPUT_WIDTHS = [35, 40, 45, 50, 55]
 HIDDEN_SIZES = [8, 16, 32, 64, 128, 256, 512]
@@ -91,10 +91,9 @@ def start_study():
             lr_schedule=scheduler,
             epochs=config.FC_epochs,
             device=device,
-            early_stopper=earlystopper
+            early_stopper=earlystopper,
+            pred_horizon=PRED_HORIZON
         ))
-        # create directory to save model state
-        os.makedirs(OUTPUT_PATH, exist_ok=True)
         pt.save(model.state_dict(), join(OUTPUT_PATH, set_key + ".pt"))
         print("\n")
     
@@ -130,6 +129,7 @@ def reduce_datasets():
     print("     min and max train cp after scaling:     ", train_enc.min().item(), train_enc.max().item(), "\n")    
 
     print("Saving scaler for inference")
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
     pt.save(scaler, join(OUTPUT_PATH, "scaler.pt"))
 
     return train_enc, test_enc
