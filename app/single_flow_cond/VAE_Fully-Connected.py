@@ -33,13 +33,13 @@ device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 
 VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", config.VAE_model)
 DATA_PATH = join(Path(os.path.abspath('')), "data", "single_flow_cond")
-OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_2")
+OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_25")
 
 N_LATENT = 32
-PRED_HORIZON = 2
+PRED_HORIZON = 25
 
 INPUT_WIDTHS = [35, 40, 45, 50, 55]
-HIDDEN_SIZES = [8, 16, 32, 64, 128, 256, 512]
+HIDDEN_SIZES = [32, 64, 128, 256, 512]
 N_HIDDEN_LAYERS = [1, 2, 3, 4]
 
 def start_study():
@@ -48,7 +48,7 @@ def start_study():
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
     print("     number of hidden layers:    ", N_HIDDEN_LAYERS)
 
-    # delete_directory_contents(OUTPUT_PATH)
+    delete_directory_contents(OUTPUT_PATH)
 
     # start encoding
     train_enc, test_enc = reduce_datasets()
