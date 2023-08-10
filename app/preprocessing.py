@@ -199,8 +199,7 @@ def autoencoder_preprocessing():
 
 
 def split_data_all(data: pt.Tensor) -> tuple:
-    """split the pressure data into train, val and test
-    """
+    """split the full dataset into configurable train, val and test parts."""
 
     # identify flow conditions for training and get the split index of the training data for validation
     train_keys = [key for key in list(data.keys()) if key not in config.test_keys]
@@ -281,6 +280,46 @@ def single_flow_cond_preprocessing():
     print("Done! \n")
 
 
+def full_pipeline_preprocessing():
+    """ preprocessing for the complete pipeline """
+    print("Creating SVD and VAE datasets for the complete training pipeline ...")
+    # load interpolated dataset and pick a flow condition
+    data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
+
+    # split and reshape the data
+    train, val, test = split_data_all(data)
+
+    # load pre-trained scalers that were fitted on the whole VAE and SVD datasets
+    print("Loading scalers \n")
+    VAE_scaler = pt.load(join(DATA_PATH, "VAE_scaler.pt"))
+    SVD_scaler = pt.load(join(DATA_PATH, "SVD_scaler.pt"))
+
+    print("Scaling datasets ...")
+    VAE_train = VAE_scaler.scale(train)
+    VAE_val = VAE_scaler.scale(val)
+    VAE_test = VAE_scaler.scale(test)
+    SVD_train = SVD_scaler.scale(train.flatten(0,1))
+    SVD_val = SVD_scaler.scale(val.flatten(0,1))
+    SVD_test = SVD_scaler.scale(test.flatten(0,1))
+
+    print("Shape of VAE train:      ", VAE_train.shape)
+    print("Shape of VAE val:        ", VAE_val.shape)
+    print("Shape of VAE test:       ", VAE_test.shape, "\n")
+    print("Shape of SVD train:      ", SVD_train.shape)
+    print("Shape of SVD val:        ", SVD_val.shape)
+    print("Shape of SVD test:       ", SVD_test.shape, "\n")
+
+    # save all datasets
+    print("Saving ...")
+    pt.save(VAE_train, join(DATA_PATH, "full_pipeline_data", "VAE_train.pt"))
+    pt.save(VAE_val, join(DATA_PATH, "full_pipeline_data", "VAE_val.pt"))
+    pt.save(VAE_test, join(DATA_PATH, "full_pipeline_data", "VAE_test.pt"))
+    pt.save(SVD_train, join(DATA_PATH, "full_pipeline_data", "SVD_train.pt"))
+    pt.save(SVD_val, join(DATA_PATH, "full_pipeline_data", "SVD_val.pt"))
+    pt.save(SVD_test, join(DATA_PATH, "full_pipeline_data", "SVD_test.pt"))
+    print("Done! \n")
+
+
 def split_data_single(data):
     """ split single flow cond of dataset into train and test"""
     num_train = int(data.shape[2] * config.single_flow_cond_train_share)
@@ -290,14 +329,10 @@ def split_data_single(data):
     return data[:, :, :num_train], data[:, :, num_train:]
 
 
-def split_data_multi():
-    """ split dataset into multiple flow conds for train (&val) and a single flow cond for test"""
-    return
-
-
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
     # svd_preprocesing()
     # autoencoder_preprocessing()
-    single_flow_cond_preprocessing()
+    # single_flow_cond_preprocessing()
+    full_pipeline_preprocessing()
