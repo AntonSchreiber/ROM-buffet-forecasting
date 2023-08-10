@@ -26,6 +26,7 @@ def delete_directory_contents(directory_path):
 
 def find_target_index_in_dataset(nested_list, target_id):
     """ Inside the rolling data window, find the index of the inputs-targets-pair that is used to predict the snapshot with target_id"""
+    assert nested_list[0][-1] <= target_id and nested_list[-1][-1] >= target_id, f"Target snapshot index {target_id} out of range, must be in range({nested_list[0][-1]}, {nested_list[-1][-1] + 1})"
     for index, inner_list in enumerate(nested_list):
         if inner_list[-1] == target_id:
             return index
@@ -58,11 +59,14 @@ def shift_input_sequence(orig_seq, new_pred):
 
 
 if __name__ == '__main__':
-    latent_size = 1
-    orig_seq = pt.rand(2, (4 * latent_size))
-    new_pred = pt.rand(2, (1 * latent_size))
-    print(orig_seq)
-    print(new_pred)
+    orig_seq = pt.rand(2, 4)
+    print("Input Sequence:      \n", orig_seq)
 
-    new_seq = shift_input_sequence(orig_seq, new_pred)
-    print(new_seq)
+    for step in range(4):
+        # shift input sequence by one: add last prediction while discarding first input
+        if step != 0:
+            orig_seq = shift_input_sequence(orig_seq=orig_seq, new_pred=new_pred)
+            print("Input Sequence:      \n", orig_seq)
+        # new prediction is sum of all previous elements
+        new_pred = orig_seq.sum(dim=1, keepdim=True)
+        print("Prediction:      \n", new_pred)
