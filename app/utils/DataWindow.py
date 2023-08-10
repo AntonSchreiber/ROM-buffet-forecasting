@@ -44,9 +44,9 @@ class DataWindow():
         # iterate over feature-label index pairs in rolling window and assign corresponding data pairs
         for input_idx, pred_idx in zip(*self.rolling_window(dataset_length=data.shape[1])):
             input_seq.append(data[:, input_idx])
-            target_seq.append(data[:, pred_idx[-1]])        # only include last target since all other are not needed during training
+            target_seq.append(data[:, pred_idx])        
 
-        # stack to pt.Tensors
+        # stack to pt.Tensors with shape [number of data windows, points per timestep, number of timesteps]
         input_seq = pt.stack(input_seq)
         target_seq = pt.stack(target_seq)
 

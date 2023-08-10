@@ -172,8 +172,7 @@ def run_epoch_AR_pred(
     device: str,
     results: dict,
     score_funcs: dict,
-    prefix: str,
-    pred_horizon: int = 1
+    prefix: str
     ) -> float:
     """Perform one epoch with optimizing steps on an autoregressively trained model"""
 
@@ -182,16 +181,19 @@ def run_epoch_AR_pred(
     start_time = time()
 
     # loop over all batches
-    for inputs, target in data_loader:
+    for inputs, targets in data_loader:
         inputs = inputs.flatten(1, 2).to(device)
-        target = target.to(device)
+        targets = targets.to(device)
         
-        for step in range(pred_horizon):
-            if step != 0:
-                inputs = shift_input_sequence(orig_seq=inputs, new_pred=pred)
-            pred = model(inputs)
+        # warm-up step 
+        pred = model(inputs)
+        loss = loss_func(targets[:, :, 0], pred)
 
-        loss = loss_func(target, pred)
+        # if pred horizon > 1, shift input sequence by 1 by adding last prediction) and make next predictions
+        for step in range(1, targets.shape[2]):
+            inputs = shift_input_sequence(orig_seq=inputs, new_pred=pred)
+            pred = model(inputs)
+            loss += loss_func(targets[:, :, step], pred)      
 
         if model.training:
             loss.backward()
@@ -201,7 +203,7 @@ def run_epoch_AR_pred(
 
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
-            labels_true.extend(target.detach().cpu().tolist())
+            labels_true.extend(targets.detach().cpu().tolist())
             labels_pred.extend(pred.detach().cpu().tolist())
 
     # keep track of performance
@@ -225,8 +227,7 @@ def train_AR_pred(
     log_all: bool = False,
     lr_schedule: pt.optim.lr_scheduler._LRScheduler = None,
     optimizer: pt.optim.Optimizer = None,
-    early_stopper: EarlyStopper = None,
-    pred_horizon: int = 1,
+    early_stopper: EarlyStopper = None
     ) -> pd.DataFrame:
     """Perform the autoregressive training of a model"""
 
@@ -248,7 +249,7 @@ def train_AR_pred(
         model = model.train()
         total_train_time += run_epoch_AR_pred(
             model, optimizer, train_loader, loss_func, device,
-            results, score_funcs, prefix="train", pred_horizon=pred_horizon
+            results, score_funcs, prefix="train"
         )
         results["epoch"].append(e)
         results["total_time"].append(total_train_time)
@@ -261,7 +262,7 @@ def train_AR_pred(
             with pt.no_grad():
                 _ = run_epoch_AR_pred(
                     model, optimizer, val_loader, loss_func, device,
-                    results, score_funcs, prefix="val", pred_horizon=pred_horizon
+                    results, score_funcs, prefix="val"
                 )
             message += f"; Validation loss: {results['val_loss'][-1]:2.6e}"
 
@@ -278,7 +279,7 @@ def train_AR_pred(
             with pt.no_grad():
                 _ = run_epoch_AR_pred(
                     model, optimizer, test_loader, loss_func, device,
-                    results, score_funcs, prefix="test", pred_horizon=pred_horizon
+                    results, score_funcs, prefix="test"
                 )
             message += f"; Test loss: {results['test_loss'][-1]:2.6e}"
 
