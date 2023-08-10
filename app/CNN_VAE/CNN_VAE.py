@@ -1,4 +1,7 @@
-"""Simple convolutional autoencoder for building ROMs.
+"""Simple Convolutional Variational Autoencoder for building ROMs.
+
+Slightly modified version of the CNN-VAE used in:
+- https://link.springer.com/article/10.1007/s13272-023-00641-6
 
 Some helpful links used as reference for the implementation:
 - https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial9/AE_CIFAR10.html
@@ -15,7 +18,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import utils.config as config
-from utils.Scaler import MinMaxScaler_1_1
 
 
 def power_of_two(shape: Tuple[int]) -> bool:
@@ -251,29 +253,3 @@ def make_VAE_model(n_latent: int, device: str) -> nn.Module:
     autoencoder = Autoencoder(encoder, decoder)
     autoencoder.to(device)
     return autoencoder
-
-
-# function to create encoder model
-def make_encoder_model(n_latent: int, device: str) -> nn.Module:
-    encoder = ConvEncoder(
-        in_size=config.target_resolution,
-        n_channels=config.VAE_input_channels,
-        n_latent=n_latent,
-        variational=True,
-        layernorm=True
-    )
-    encoder.to(device)
-    return encoder
-
-
-# function to create encoder model
-def make_decoder_model(n_latent: int, device: str) -> nn.Module:
-    decoder = ConvDecoder(
-        in_size=config.target_resolution,
-        n_channels=config.VAE_output_channels,
-        n_latent=n_latent,
-        layernorm=True,
-        squash_output=True
-    )
-    decoder.to(device)
-    return decoder

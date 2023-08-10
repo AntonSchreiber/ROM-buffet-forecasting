@@ -3,17 +3,14 @@
 
 # 1. Load pre-processed data
 # 2. Encode into reduced space
+# 3. Scale encoded data
 # 3. Train Fully-Connected model in reduced space
-# 4. Compute loss in reduced space
-# 5. Decode into full-space
-# 6. Compute loss in full-space
 
 import os
 from os.path import join
 from pathlib import Path
 from itertools import product
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -21,8 +18,8 @@ pt.manual_seed(0)
 
 from utils.Scaler import MinMaxScaler_1_1
 from utils.DataWindow import DataWindow
-from utils.FullyConnected import FullyConnected
-from utils.CNN_VAE import make_VAE_model
+from FC.FullyConnected import FullyConnected
+from CNN_VAE.CNN_VAE import make_VAE_model
 from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_AR_pred
 from utils.helper_funcs import delete_directory_contents
@@ -33,14 +30,14 @@ device = pt.device("cuda:0") if pt.cuda.is_available() else pt.device("cpu")
 
 VAE_PATH = join(Path(os.path.abspath('')), "output", "VAE", "latent_study", config.VAE_model)
 DATA_PATH = join(Path(os.path.abspath('')), "data", "single_flow_cond")
-OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_25")
+OUTPUT_PATH = join(Path(os.path.abspath('')), "output", "VAE_FC", "param_study", "pred_horizon_64")
 
-N_LATENT = 32
-PRED_HORIZON = 25
+N_LATENT = config.VAE_latent_size
+PRED_HORIZON = 64
 
-INPUT_WIDTHS = [35, 40, 45, 50, 55]
-HIDDEN_SIZES = [32, 64, 128, 256, 512]
-N_HIDDEN_LAYERS = [1, 2, 3, 4]
+INPUT_WIDTHS = [32]
+HIDDEN_SIZES = [128, 256, 512]
+N_HIDDEN_LAYERS = [3, 4, 5]
 
 def start_study():
     print("Training Fully-Connected models with varying model parameters: ")

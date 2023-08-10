@@ -13,7 +13,7 @@ if app_dir not in sys.path:
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from utils.CNN_VAE import make_VAE_model
+from VAE.CNN_VAE import make_VAE_model
 from utils.training_funcs import train_VAE
 from utils.helper_funcs import delete_directory_contents
 import utils.config as config
