@@ -28,7 +28,7 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 16
+PRED_HORIZON = 2
 DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 
@@ -40,8 +40,8 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", DIM_REDUCTION, "param_study", f"p
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [128, 256, 512]
-N_HIDDEN_LAYERS = [2, 3, 4, 5]
+HIDDEN_SIZES = [128, 256, 512, 1024]
+N_HIDDEN_LAYERS = [1, 2, 3, 4, 5, 6]
 
 def start_study():
     print("Training Fully-Connected models with varying model parameters: ")
@@ -53,9 +53,9 @@ def start_study():
 
     # compress dataset into reduced state either by VAE or SVD
     if DIM_REDUCTION == "VAE":
-        train_red, val_red, test_red = reduce_datasets_VAE(DATA_PATH, VAE_PATH, OUTPUT_PATH, device) 
+        (train_red, val_red, test_red), _ = reduce_datasets_VAE(DATA_PATH, VAE_PATH, OUTPUT_PATH, device) 
     elif DIM_REDUCTION == "SVD":
-        train_red, val_red, test_red = reduce_datasets_SVD(DATA_PATH, SVD_PATH, OUTPUT_PATH, device) 
+        (train_red, val_red, test_red), _ = reduce_datasets_SVD(DATA_PATH, SVD_PATH, OUTPUT_PATH) 
     else:
         raise ValueError("Unknown DIM_REDUCTION")
 

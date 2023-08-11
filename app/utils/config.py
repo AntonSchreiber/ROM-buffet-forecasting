@@ -34,13 +34,14 @@ single_flow_cond_train_share = .8   # 80% training data -> 20% test data
 
 timestep_reconstruction = 100
 timestep_reconstruction_single = 450
+timestep_prediction = 250
 
 ########################################################
 # Model parameters
 ########################################################
 
 # SVD
-SVD_rank = 250
+SVD_rank = 300
 
 # CNN-VAE
 VAE_input_channels = (1, 64, 128, 256, 512)

@@ -62,7 +62,7 @@ def shift_input_sequence(orig_seq, new_pred):
     return orig_seq_copy
 
 
-def reduce_datasets_SVD(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str, device: str):
+def reduce_datasets_SVD(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
     # load datasets
     train_data, val_data, test_data = load_pipeline_datasets(DATA_PATH=DATA_PATH, DIM_REDUCTION="SVD")
 
@@ -71,11 +71,11 @@ def reduce_datasets_SVD(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str, device:
 
     # reduce datasets
     print("Reducing datasets with Left Singular Vectors ...")
-    train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ train_data
-    val_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ val_data
-    test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ test_data
+    train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (train_data - train_data.mean(dim=1).unsqueeze(-1))
+    val_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (val_data - val_data.mean(dim=1).unsqueeze(-1))
+    test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (test_data - test_data.mean(dim=1).unsqueeze(-1))
 
-    return scale_pipeline_datasets(train_red, val_red, test_red, OUTPUT_PATH)
+    return scale_pipeline_datasets(train_red, val_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
 
 
 def reduce_datasets_VAE(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str):
@@ -93,7 +93,7 @@ def reduce_datasets_VAE(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device:
     val_red = autoencoder.encode_dataset(val_data, device)
     test_red = autoencoder.encode_dataset(test_data, device)
 
-    return scale_pipeline_datasets(train_red, val_red, test_red, OUTPUT_PATH)
+    return scale_pipeline_datasets(train_red, val_red, test_red, OUTPUT_PATH), autoencoder._decoder
 
 
 def load_pipeline_datasets(DATA_PATH: str, DIM_REDUCTION: str):
@@ -102,24 +102,24 @@ def load_pipeline_datasets(DATA_PATH: str, DIM_REDUCTION: str):
     train_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_train.pt"))
     val_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_val.pt"))
     test_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_test.pt"))
-    print("     min and max train cp prior reduction:     ", train_data.min().item(), train_data.max().item())
+    print("     min and max train cp prior reduction:       ", train_data.min().item(), train_data.max().item(), "\n")
 
     return train_data, val_data, test_data
 
 
 def scale_pipeline_datasets(train_red: pt.Tensor, val_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH: str):
-    print("     Shape of reduced train data:     ", train_red.shape)
-    print("     Shape of reduced val data:       ", val_red.shape)
-    print("     Shape of reduced test data:      ", test_red.shape, "\n")
-    print("     min and max train cp after reduction:     ", train_red.min().item(), train_red.max().item())
+    print("     Shape of reduced train data:                ", train_red.shape)
+    print("     Shape of reduced val data:                  ", val_red.shape)
+    print("     Shape of reduced test data:                 ", test_red.shape)
+    print("     min and max train cp after reduction:       ", train_red.min().item(), train_red.max().item(), "\n")
 
     # scale data
-    print("Scaling encoded data to [-1, 1] ... ")
+    print("Scaling reduced data to [-1, 1] ... ")
     scaler = MinMaxScaler_1_1().fit(train_red)
     train_red, val_red, test_red = scaler.scale(train_red), scaler.scale(val_red), scaler.scale(test_red)
-    print("     min and max train cp after scaling:     ", train_red.min().item(), train_red.max().item(), "\n")    
+    print("     min and max train cp after scaling:         ", train_red.min().item(), train_red.max().item(), "\n")    
 
-    print("Saving scaler for inference")
+    print("Saving scaler for inference ... ")
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     pt.save(scaler, join(OUTPUT_PATH, "scaler.pt"))
 
