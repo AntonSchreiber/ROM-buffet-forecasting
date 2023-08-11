@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # include app directory into sys.path
-REMOTE= False
+REMOTE= True
 parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -162,6 +162,7 @@ def svd_preprocesing():
 
     # save all datasets
     print("Saving ...")
+    os.makedirs(join(DATA_PATH, "SVD"), exist_ok=True)
     pt.save(scaler.scale(X_train), join(DATA_PATH, "SVD", "X_train.pt"))
     pt.save(scaler.scale(X_test_1), join(DATA_PATH, "SVD", "X_test_1.pt"))
     pt.save(scaler.scale(X_test_2), join(DATA_PATH, "SVD", "X_test_2.pt"))
@@ -192,6 +193,7 @@ def autoencoder_preprocessing():
 
     # save all datasets
     print("Saving ...")
+    os.makedirs(join(DATA_PATH, "VAE"), exist_ok=True)
     pt.save(train_dataset, join(DATA_PATH, "VAE", "train_dataset.pt"))
     pt.save(val_dataset, join(DATA_PATH, "VAE", "val_dataset.pt"))
     pt.save(test_dataset, join(DATA_PATH, "VAE", "test_dataset.pt"))
@@ -273,6 +275,7 @@ def single_flow_cond_preprocessing():
 
     # save all datasets
     print("Saving ...")
+    os.makedirs(join(DATA_PATH, "single_flow_cond"), exist_ok=True)
     pt.save(VAE_train, join(DATA_PATH, "single_flow_cond", "VAE_train.pt"))
     pt.save(VAE_test, join(DATA_PATH, "single_flow_cond", "VAE_test.pt"))
     pt.save(SVD_train, join(DATA_PATH, "single_flow_cond", "SVD_train.pt"))
@@ -311,12 +314,15 @@ def full_pipeline_preprocessing():
 
     # save all datasets
     print("Saving ...")
-    pt.save(VAE_train, join(DATA_PATH, "full_pipeline_data", "VAE_train.pt"))
-    pt.save(VAE_val, join(DATA_PATH, "full_pipeline_data", "VAE_val.pt"))
-    pt.save(VAE_test, join(DATA_PATH, "full_pipeline_data", "VAE_test.pt"))
-    pt.save(SVD_train, join(DATA_PATH, "full_pipeline_data", "SVD_train.pt"))
-    pt.save(SVD_val, join(DATA_PATH, "full_pipeline_data", "SVD_val.pt"))
-    pt.save(SVD_test, join(DATA_PATH, "full_pipeline_data", "SVD_test.pt"))
+    data_path = join(DATA_PATH, "full_pipeline_data")
+    os.makedirs(data_path, exist_ok=True)
+
+    pt.save(VAE_train, join(data_path, "VAE_train.pt"))
+    pt.save(VAE_val, join(data_path, "VAE_val.pt"))
+    pt.save(VAE_test, join(data_path, "VAE_test.pt"))
+    pt.save(SVD_train, join(data_path, "SVD_train.pt"))
+    pt.save(SVD_val, join(data_path, "SVD_val.pt"))
+    pt.save(SVD_test, join(data_path, "SVD_test.pt"))
     print("Done! \n")
 
 
@@ -334,5 +340,5 @@ if __name__ == "__main__":
     # make_data_subset()
     # svd_preprocesing()
     # autoencoder_preprocessing()
-    # single_flow_cond_preprocessing()
-    full_pipeline_preprocessing()
+    single_flow_cond_preprocessing()
+    # full_pipeline_preprocessing()

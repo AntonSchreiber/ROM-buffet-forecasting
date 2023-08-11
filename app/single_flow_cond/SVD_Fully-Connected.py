@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
 from utils.DataWindow import DataWindow
-from utils.FullyConnected import FullyConnected
+from FC.FullyConnected import FullyConnected
 from utils.training_funcs import train_AR_pred
 import utils.config as config
 
