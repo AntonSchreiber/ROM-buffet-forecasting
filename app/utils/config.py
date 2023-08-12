@@ -68,10 +68,11 @@ VAE_model = "32/8_32"
 
 # Fully-Connected
 FC_input_width = 32
-FC_batch_size = 32
+FC_SVD_batch_size = 256
+FC_VAE_batch_size = 512
 FC_learning_rate = 1e-3
 FC_lr_factor = 0.1
-FC_epochs = 500
+FC_epochs = 300
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
 
