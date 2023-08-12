@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # include app directory into sys.path
-REMOTE= True
+REMOTE= False
 parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -135,8 +135,7 @@ def svd_preprocesing():
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
     keys = list(data.keys())
 
-    # sample two random keys for test data except the outer ones
-    test_keys = config.test_keys
+    test_keys = config.test_keys_all
     print("The test keys are:       ", test_keys)
 
     # assemble test data
@@ -200,54 +199,13 @@ def autoencoder_preprocessing():
     print("Done! \n")
 
 
-def split_data_all(data: pt.Tensor) -> tuple:
-    """split the full dataset into configurable train, val and test parts."""
-
-    # identify flow conditions for training and get the split index of the training data for validation
-    train_keys = [key for key in list(data.keys()) if key not in config.test_keys]
-    split_index = int(config.train_split)
-
-    # initialize train and validation data tensors
-    if config.mini_dataset:
-        train_cp = data[train_keys[0]][:, :, :config.mini_train_per_cond]
-        val_cp = data[train_keys[0]][:, :, split_index:(split_index + config.mini_val_per_cond)]
-    else:
-        train_cp = data[train_keys[0]][:, :, :split_index]
-        val_cp = data[train_keys[0]][:, :, split_index:]
-
-    # iterate over training flow conditions, split the training data into train and validation and concatenate
-    for train_key in train_keys[1:]:
-        train_split = data[train_key][:, :, :split_index]
-        val_split = data[train_key][:, :, split_index:]
-        if config.mini_dataset:
-            train_cp = pt.concat((train_cp, train_split[:, :, :config.mini_train_per_cond]), dim=2)
-            val_cp = pt.concat((val_cp, val_split[:, :, :config.mini_val_per_cond]), dim=2)
-        else:
-            train_cp = pt.concat((train_cp, train_split), dim=2)
-            val_cp = pt.concat((val_cp, val_split), dim=2)
-
-    print("Shape of training cp:    ", train_cp.shape)
-    print("Shape of val cp:         ", val_cp.shape)
-
-    # iterate over test flow conditions and concatenate
-    if config.mini_dataset:
-        test_cp = data[config.test_keys[0]][:, :, :config.mini_test_per_cond]
-    else:
-        test_cp = data[config.test_keys[0]]
-
-    for test_key in config.test_keys[1:]:
-        if config.mini_dataset:
-            test_cp = pt.concat((test_cp, data[test_key][:, :, :config.mini_test_per_cond]), dim=2)
-        else:
-            test_cp = pt.concat((test_cp, data[test_key]), dim=2)
-    
-    print("Shape of test cp:        ", test_cp.shape)
-
-    return train_cp, val_cp, test_cp
-
-
 def single_flow_cond_preprocessing():
-    """ preprocessing for the single flow condition pipeline """
+    """ preprocessing for the single flow condition pipeline 
+
+    Angles of Attack:
+        - train:    4.0 (first 80%)
+        - test:     4.0 (last 20%)
+    """
     print("Creating SVD and VAE datasets for the single flow condition training pipeline ...")
     # load interpolated dataset and pick a flow condition
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
@@ -275,22 +233,28 @@ def single_flow_cond_preprocessing():
 
     # save all datasets
     print("Saving ...")
-    os.makedirs(join(DATA_PATH, "single_flow_cond"), exist_ok=True)
-    pt.save(VAE_train, join(DATA_PATH, "single_flow_cond", "VAE_train.pt"))
-    pt.save(VAE_test, join(DATA_PATH, "single_flow_cond", "VAE_test.pt"))
-    pt.save(SVD_train, join(DATA_PATH, "single_flow_cond", "SVD_train.pt"))
-    pt.save(SVD_test, join(DATA_PATH, "single_flow_cond", "SVD_test.pt"))
+    data_path = join(DATA_PATH, "single_flow_cond")
+    os.makedirs(data_path, exist_ok=True)
+    pt.save(VAE_train, join(data_path, "VAE_train.pt"))
+    pt.save(VAE_test, join(data_path, "VAE_test.pt"))
+    pt.save(SVD_train, join(data_path, "SVD_train.pt"))
+    pt.save(SVD_test, join(data_path, "SVD_test.pt"))
     print("Done! \n")
 
 
-def full_pipeline_preprocessing():
-    """ preprocessing for the complete pipeline """
-    print("Creating SVD and VAE datasets for the complete training pipeline ...")
+def multi_flow_cond_preprocessing():
+    """ preprocessing for the multi flow condition pipeline 
+
+    Angles of Attack:
+        - train:    3.0, 3.5, 4.5, 5.0
+        - test:     4.0
+    """
+    print("Creating SVD and VAE datasets for the multi flow cond pipeline ...")
     # load interpolated dataset and pick a flow condition
     data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
 
     # split and reshape the data
-    train, val, test = split_data_all(data)
+    train, val, test = split_data_multi(data)
 
     # load pre-trained scalers that were fitted on the whole VAE and SVD datasets
     print("Loading scalers \n")
@@ -314,7 +278,7 @@ def full_pipeline_preprocessing():
 
     # save all datasets
     print("Saving ...")
-    data_path = join(DATA_PATH, "full_pipeline_data")
+    data_path = join(DATA_PATH, "multi_flow_cond")
     os.makedirs(data_path, exist_ok=True)
 
     pt.save(VAE_train, join(data_path, "VAE_train.pt"))
@@ -335,10 +299,90 @@ def split_data_single(data):
     return data[:, :, :num_train], data[:, :, num_train:]
 
 
+def split_data_multi(data: pt.Tensor) -> tuple:
+    """split a subset of the full dataset into configurable train, val and test parts."""
+
+    # identify flow conditions for training and get the split index of the training data for validation
+    train_keys = config.train_keys_multi
+    random.shuffle(train_keys)
+    split_index = int(config.train_split_multi)
+    print("The train keys are:      ", train_keys)
+
+    # initialize train and validation data tensors
+    train_cp = data[train_keys[0]][:, :, :split_index]
+    val_cp = data[train_keys[0]][:, :, split_index:]
+
+    # iterate over training flow conditions, split the training data into train and validation and concatenate
+    for train_key in train_keys[1:]:
+        train_split = data[train_key][:, :, :split_index]
+        val_split = data[train_key][:, :, split_index:]
+        train_cp = pt.concat((train_cp, train_split), dim=2)
+        val_cp = pt.concat((val_cp, val_split), dim=2)
+
+    print("Shape of training cp:    ", train_cp.shape)
+    print("Shape of val cp:         ", val_cp.shape)
+
+    # iterate over test flow conditions and concatenate
+    test_cp = data[config.test_keys_multi[0]]
+
+    for test_key in config.test_keys_multi[1:]:
+        test_cp = pt.concat((test_cp, data[test_key]), dim=2)
+    
+    print("Shape of test cp:        ", test_cp.shape)
+
+    return train_cp, val_cp, test_cp
+
+
+def split_data_all(data: pt.Tensor) -> tuple:
+    """split the full dataset into configurable train, val and test parts."""
+
+    # identify flow conditions for training and get the split index of the training data for validation
+    train_keys = [key for key in list(data.keys()) if key not in config.test_keys_all]
+    split_index = int(config.train_split_all)
+
+    # initialize train and validation data tensors
+    if config.mini_dataset:
+        train_cp = data[train_keys[0]][:, :, :config.mini_train_per_cond]
+        val_cp = data[train_keys[0]][:, :, split_index:(split_index + config.mini_val_per_cond)]
+    else:
+        train_cp = data[train_keys[0]][:, :, :split_index]
+        val_cp = data[train_keys[0]][:, :, split_index:]
+
+    # iterate over training flow conditions, split the training data into train and validation and concatenate
+    for train_key in train_keys[1:]:
+        train_split = data[train_key][:, :, :split_index]
+        val_split = data[train_key][:, :, split_index:]
+        if config.mini_dataset:
+            train_cp = pt.concat((train_cp, train_split[:, :, :config.mini_train_per_cond]), dim=2)
+            val_cp = pt.concat((val_cp, val_split[:, :, :config.mini_val_per_cond]), dim=2)
+        else:
+            train_cp = pt.concat((train_cp, train_split), dim=2)
+            val_cp = pt.concat((val_cp, val_split), dim=2)
+
+    print("Shape of training cp:    ", train_cp.shape)
+    print("Shape of val cp:         ", val_cp.shape)
+
+    # iterate over test flow conditions and concatenate
+    if config.mini_dataset:
+        test_cp = data[config.test_keys_all[0]][:, :, :config.mini_test_per_cond]
+    else:
+        test_cp = data[config.test_keys_all[0]]
+
+    for test_key in config.test_keys_all[1:]:
+        if config.mini_dataset:
+            test_cp = pt.concat((test_cp, data[test_key][:, :, :config.mini_test_per_cond]), dim=2)
+        else:
+            test_cp = pt.concat((test_cp, data[test_key]), dim=2)
+    
+    print("Shape of test cp:        ", test_cp.shape)
+
+    return train_cp, val_cp, test_cp
+
+
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
     # svd_preprocesing()
     # autoencoder_preprocessing()
     single_flow_cond_preprocessing()
-    # full_pipeline_preprocessing()
+    multi_flow_cond_preprocessing()

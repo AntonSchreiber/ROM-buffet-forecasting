@@ -29,13 +29,13 @@ print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
 PRED_HORIZON = 2
-DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
+DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
 SVD_PATH = join(parent_dir, "output", "SVD", "U.pt")
-DATA_PATH = join(parent_dir, "data", "full_pipeline_data")
+DATA_PATH = join(parent_dir, "data", "multi_flow_cond")
 OUTPUT_PATH = join(parent_dir, "output", "FC", DIM_REDUCTION, "param_study", f"pred_horizon_{PRED_HORIZON}")
 
 # define study parameters of Fully-Connected network

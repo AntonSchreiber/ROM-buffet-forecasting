@@ -13,11 +13,11 @@ time_steps_per_cond = 500
 target_resolution = (256, 128)
 target_tensor_shape = (256, 128, 500)
 
-# Pre-Processing with whole dataset
-test_keys = ['ma0.84_alpha3.00', 'ma0.84_alpha5.00']
+# Pre-Processing for SVD and VAE
+test_keys_all = ['ma0.84_alpha3.00', 'ma0.84_alpha5.00']
 num_train_flow_conds = 5
-train_split = 450
-val_split = 50
+train_split_all = 450
+val_split_all = 50
 
 mini_dataset = False
 mini_train_per_cond = 25
@@ -27,6 +27,12 @@ mini_test_per_cond = 4
 # Pre-Processing for single flow cond pipeline
 single_flow_cond = 'ma0.84_alpha4.00'
 single_flow_cond_train_share = .8   # 80% training data -> 20% test data
+
+# Pre-Processing for single flow cond pipeline
+train_keys_multi = ['ma0.84_alpha3.00', 'ma0.84_alpha3.50', 'ma0.84_alpha4.50', 'ma0.84_alpha5.00']
+test_keys_multi = ['ma0.84_alpha4.00']
+train_split_multi = 420
+val_split_multi = 80
 
 ########################################################
 # Model Optimization
