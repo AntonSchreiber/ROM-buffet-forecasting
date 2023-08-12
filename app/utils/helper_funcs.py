@@ -138,7 +138,7 @@ def reduce_datasets_SVD_single(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
     train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (train_data - train_data.mean(dim=1).unsqueeze(-1))
     test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (test_data - test_data.mean(dim=1).unsqueeze(-1))
 
-    return scale_datasets_multi(train_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
+    return scale_datasets_single(train_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
 
 
 def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str):
@@ -155,7 +155,7 @@ def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, 
     train_red = autoencoder.encode_dataset(train_data, device)
     test_red = autoencoder.encode_dataset(test_data, device)
 
-    return scale_datasets_multi(train_red, test_red, OUTPUT_PATH), autoencoder._decoder
+    return scale_datasets_single(train_red, test_red, OUTPUT_PATH), autoencoder._decoder
 
 
 def load_datasets_single(DATA_PATH: str, DIM_REDUCTION: str):

@@ -1,5 +1,10 @@
 # CONFIGURATION FILE
 
+import logging
+
+# Logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 ########################################################
 # Paths
 ########################################################
@@ -39,7 +44,7 @@ val_split_multi = 80
 ########################################################
 
 timestep_reconstruction = 100
-timestep_reconstruction_single = 450
+timestep_prediction_single = 450
 timestep_prediction = 250
 
 ########################################################
@@ -62,6 +67,7 @@ VAE_latent_size = 32
 VAE_model = "32/8_32"
 
 # Fully-Connected
+FC_input_width = 32
 FC_batch_size = 32
 FC_learning_rate = 1e-3
 FC_lr_factor = 0.1

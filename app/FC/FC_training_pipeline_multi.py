@@ -20,7 +20,7 @@ from utils.DataWindow import DataWindow
 from FC.FullyConnected import FullyConnected
 from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_AR_pred
-from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD, reduce_datasets_VAE
+from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD_multi, reduce_datasets_VAE_multi
 import utils.config as config
 
 # use GPU if possible
@@ -36,7 +36,7 @@ N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
 SVD_PATH = join(parent_dir, "output", "SVD", "U.pt")
 DATA_PATH = join(parent_dir, "data", "multi_flow_cond")
-OUTPUT_PATH = join(parent_dir, "output", "FC", DIM_REDUCTION, "param_study", f"pred_horizon_{PRED_HORIZON}")
+OUTPUT_PATH = join(parent_dir, "output", "FC", "multi", DIM_REDUCTION, "param_study", f"pred_horizon_{PRED_HORIZON}")
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
@@ -53,9 +53,9 @@ def start_study():
 
     # compress dataset into reduced state either by VAE or SVD
     if DIM_REDUCTION == "VAE":
-        (train_red, val_red, test_red), _ = reduce_datasets_VAE(DATA_PATH, VAE_PATH, OUTPUT_PATH, device) 
+        (train_red, val_red, test_red), _ = reduce_datasets_VAE_multi(DATA_PATH, VAE_PATH, OUTPUT_PATH, device) 
     elif DIM_REDUCTION == "SVD":
-        (train_red, val_red, test_red), _ = reduce_datasets_SVD(DATA_PATH, SVD_PATH, OUTPUT_PATH) 
+        (train_red, val_red, test_red), _ = reduce_datasets_SVD_multi(DATA_PATH, SVD_PATH, OUTPUT_PATH) 
     else:
         raise ValueError("Unknown DIM_REDUCTION")
 
