@@ -89,8 +89,9 @@ FC_VAE_single_model = "4_32_16_2"
 # Plots
 ########################################################
 
-U_inf = 211
-c_mean = 0.1965
+U_inf = 211             # m/s
+a = 295                 # m/s
+c_mean = 0.1965         # m
 timesteps_per_second = 2000
 
 standard_figsize_1 = (6, 3)
