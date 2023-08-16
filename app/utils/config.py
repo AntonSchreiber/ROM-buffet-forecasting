@@ -44,7 +44,7 @@ val_split_multi = 80
 ########################################################
 
 timestep_reconstruction = 100
-timestep_prediction_single = 450
+timestep_prediction_single = 496
 timestep_prediction = 250
 
 ########################################################
@@ -68,8 +68,10 @@ VAE_model = "32/8_32"
 
 # Fully-Connected
 FC_input_width = 32
-FC_SVD_batch_size = 256
-FC_VAE_batch_size = 512
+FC_SVD_single_batch_size = 256
+FC_VAE_single_batch_size = 256
+FC_SVD_multi_batch_size = 512
+FC_VAE_multi_batch_size = 1024
 FC_learning_rate = 1e-3
 FC_lr_factor = 0.1
 FC_epochs = 300
@@ -93,3 +95,4 @@ plot_lims_MSE_spatial = (0, 0.018)
 plot_lims_MSE_temporal = [7e-4, 6.8e-3]
 plot_lims_cp = (-1, 1)
 plot_lims_MSE_reconstruction = [0, 0.05]
+plot_lims_MSE_FC_single_heatmap = [3e-1, 1e1]

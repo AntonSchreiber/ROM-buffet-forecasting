@@ -28,9 +28,10 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 2
+PRED_HORIZON = 64
 DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
+BATCH_SIZE = config.FC_SVD_multi_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_multi_batch_size
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
@@ -40,10 +41,10 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "multi", DIM_REDUCTION, "param_st
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [128, 256, 512, 1024]
-N_HIDDEN_LAYERS = [1, 2, 3, 4, 5, 6]
+HIDDEN_SIZES = [16, 32, 64, 128]
+N_HIDDEN_LAYERS = [1, 2]
 
-def start_study():
+def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
     print("     input width:                ", INPUT_WIDTHS)
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
@@ -63,57 +64,57 @@ def start_study():
     print("Starting study...")
     study_results = defaultdict(list)
     param_combinations = list(product(INPUT_WIDTHS, HIDDEN_SIZES, N_HIDDEN_LAYERS))
-    print(f"'---> {len(param_combinations)} trainings in total")
+    print(f"'---> {len(param_combinations) * n_repeat} trainings in total")
 
-    for i, param_set in enumerate(param_combinations):
-        print(f"====Model {i+1}=========================================================")
-        input_width, hidden_size, n_hidden_layers = param_set
-        set_key = f"{input_width}_{hidden_size}_{n_hidden_layers}"
-        print("--input_width={}, hidden_size={} and n_hidden={}".format(input_width, hidden_size, n_hidden_layers))
+    for i in range(n_repeat):
+        print("---Iteration %d--------" %(i+1))
+        pt.manual_seed(i)
+        for param_set in param_combinations:
+            input_width, hidden_size, n_hidden_layers = param_set
+            set_key = f"{input_width}_{hidden_size}_{n_hidden_layers}"
+            print("--input_width={}, hidden_size={} and n_hidden={}".format(input_width, hidden_size, n_hidden_layers))
 
-        # create DataWindow object to create windows of data, feed into DataLoaders
-        data_window = DataWindow(train=train_red, val=val_red, test=test_red, input_width=input_width, pred_horizon=PRED_HORIZON)
+            # create DataWindow object to create windows of data, feed into DataLoaders
+            data_window = DataWindow(train=train_red, val=val_red, test=test_red, input_width=input_width, pred_horizon=PRED_HORIZON)
 
-        train_loader = DataLoader(data_window.train_dataset, batch_size=config.FC_batch_size, shuffle=True)
-        val_loader = DataLoader(data_window.val_dataset, batch_size=config.FC_batch_size, shuffle=True)
-        test_loader = DataLoader(data_window.test_dataset, batch_size=config.FC_batch_size, shuffle=True)
+            train_loader = DataLoader(data_window.train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+            val_loader = DataLoader(data_window.val_dataset, batch_size=BATCH_SIZE, shuffle=True)
+            test_loader = DataLoader(data_window.test_dataset, batch_size=BATCH_SIZE, shuffle=True)
+            
+            # initialize model and utilities
+            model = FullyConnected(
+                latent_size=N_LATENT,
+                input_width=input_width,
+                hidden_size=hidden_size,
+                n_hidden_layers=n_hidden_layers
+        )
+
+            loss_func_latent = nn.MSELoss()
+            optimizer = pt.optim.Adam(model.parameters(), lr=1e-3)
+            scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience_scheduler, factor=config.FC_lr_factor)
+
+            # start training and append resoults to defaultdict
+            study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_AR_pred(
+                model=model,
+                loss_func=loss_func_latent,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                test_loader=test_loader,
+                optimizer=optimizer,
+                lr_schedule=scheduler,
+                epochs=config.FC_epochs,
+                device=device
+            ))
+            pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
+            print("\n")
         
-        # initialize model and utilities
-        model = FullyConnected(
-            latent_size=N_LATENT,
-            input_width=input_width,
-            hidden_size=hidden_size,
-            n_hidden_layers=n_hidden_layers
-    )
-
-        loss_func_latent = nn.MSELoss()
-        optimizer = pt.optim.Adam(model.parameters(), lr=1e-3)
-        scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience_scheduler, factor=config.FC_lr_factor)
-        earlystopper = EarlyStopper(patience=config.FC_patience_earlystop)
-
-        # start training and append resoults to defaultdict
-        study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_AR_pred(
-            model=model,
-            loss_func=loss_func_latent,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            test_loader=test_loader,
-            optimizer=optimizer,
-            lr_schedule=scheduler,
-            epochs=config.FC_epochs,
-            device=device,
-            early_stopper=earlystopper
-        ))
-        pt.save(model.state_dict(), join(OUTPUT_PATH, set_key + ".pt"))
-        print("\n")
-    
     # save results of training metrics
     print("========== Study finished, saving results")
     pt.save(study_results, join(OUTPUT_PATH, "study_results.pt"))
 
 
 if __name__ == '__main__':
-    start_study()
+    start_study(n_repeat=10)
 
     
 

@@ -31,6 +31,7 @@ print("Computing device:        ", device)
 PRED_HORIZON = 64
 DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
+BATCH_SIZE = config.FC_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_single_batch_size
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
@@ -40,10 +41,8 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "single", DIM_REDUCTION, "param_s
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [64, 128, 256]
-N_HIDDEN_LAYERS = [1, 2, 3]
-
-BATCH_SIZE = config.FC_SVD_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_batch_size
+HIDDEN_SIZES = [16, 32, 64, 128]
+N_HIDDEN_LAYERS = [1, 2]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -105,12 +104,12 @@ def start_study(n_repeat):
                 epochs=config.FC_epochs,
                 device=device
             ))
-            pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + set_key + ".pt"))
+            pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
             print("\n")
         
-        # save results of training metrics
-        print("========== Study finished, saving results")
-        pt.save(study_results, join(OUTPUT_PATH, "study_results.pt"))
+    # save results of training metrics
+    print("========== Study finished, saving results")
+    pt.save(study_results, join(OUTPUT_PATH, "study_results.pt"))
 
 
 if __name__ == '__main__':
