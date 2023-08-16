@@ -41,8 +41,8 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "single", DIM_REDUCTION, "param_s
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [16, 32, 64, 128]
-N_HIDDEN_LAYERS = [1, 2]
+HIDDEN_SIZES = [128, 256, 512]
+N_HIDDEN_LAYERS = [2, 3]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -101,7 +101,7 @@ def start_study(n_repeat):
                 val_loader=test_loader,
                 optimizer=optimizer,
                 lr_schedule=scheduler,
-                epochs=config.FC_epochs,
+                epochs=config.FC_single_epochs,
                 device=device
             ))
             pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
