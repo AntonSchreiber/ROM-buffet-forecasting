@@ -28,7 +28,7 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 128
+PRED_HORIZON = 96
 DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.FC_SVD_multi_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_multi_batch_size
@@ -41,8 +41,8 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "multi", DIM_REDUCTION, "param_st
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [64, 128, 256, 512]
-N_HIDDEN_LAYERS = [1, 2]
+HIDDEN_SIZES = [16, 32, 64]
+N_HIDDEN_LAYERS = [1, 2, 3]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -114,7 +114,7 @@ def start_study(n_repeat):
 
 
 if __name__ == '__main__':
-    start_study(n_repeat=10)
+    start_study(n_repeat=5)
 
     
 
