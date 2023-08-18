@@ -18,7 +18,6 @@ if app_dir not in sys.path:
 
 from utils.DataWindow import DataWindow
 from FC.FullyConnected import FullyConnected
-from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_AR_pred
 from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD_multi, reduce_datasets_VAE_multi
 import utils.config as config

@@ -44,7 +44,7 @@ val_split_multi = 80
 ########################################################
 
 timestep_reconstruction = 100
-timestep_prediction_single = 496
+timestep_prediction_single = (40, 50)
 timestep_prediction_multi = (150, 200)
 timestep_prediction = 250
 
