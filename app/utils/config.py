@@ -70,19 +70,19 @@ VAE_model = "32/8_32"
 
 # Fully-Connected
 FC_input_width = 32
-FC_SVD_single_batch_size = 256
-FC_VAE_single_batch_size = 256
+FC_SVD_single_batch_size = 512
+FC_VAE_single_batch_size = 512
 FC_SVD_multi_batch_size = 512
 FC_VAE_multi_batch_size = 1024
-FC_learning_rate = 1e-3
+FC_learning_rate = 1e-4
 FC_lr_factor = 0.1
-FC_single_epochs = 300
+FC_single_epochs = 1000
 FC_multi_epochs = 400
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
 
-FC_SVD_single_model = "10_32_32_2"
-FC_VAE_single_model = "4_32_16_2"
+FC_SVD_single_model = "2_32_256_4"
+FC_VAE_single_model = "7_32_256_6"
 
 
 ########################################################

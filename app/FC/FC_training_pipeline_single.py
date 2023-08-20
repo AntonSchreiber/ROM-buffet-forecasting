@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
 # include app directory into sys.path
-REMOTE= True
+REMOTE= False
 parent_dir = Path(os.path.abspath('')).parent.parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -28,8 +28,8 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 16
-DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
+PRED_HORIZON = 2
+DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.FC_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_single_batch_size
 
@@ -41,8 +41,8 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "single", DIM_REDUCTION, "param_s
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [256, 512]
-N_HIDDEN_LAYERS = [3, 4, 5]
+HIDDEN_SIZES = [16, 32, 64]
+N_HIDDEN_LAYERS = [3]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -89,7 +89,7 @@ def start_study(n_repeat):
         )
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.Adam(model.parameters(), lr=1e-4)
+            optimizer = pt.optim.Adam(model.parameters(), lr=config.FC_learning_rate)
             scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience_scheduler, factor=config.FC_lr_factor)
             earlystopper = EarlyStopper(patience=config.FC_patience_earlystop)
 
