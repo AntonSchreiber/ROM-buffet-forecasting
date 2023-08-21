@@ -185,7 +185,7 @@ def run_epoch_AR_pred(
         inputs = inputs.flatten(1, 2).to(device)
         targets = targets.to(device)
         
-        # warm-up step 
+        # init step 
         pred = model(inputs)
         loss = loss_func(targets[:, :, 0], pred)
 
