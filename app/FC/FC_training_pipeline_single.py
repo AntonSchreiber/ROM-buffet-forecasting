@@ -17,7 +17,7 @@ if app_dir not in sys.path:
       sys.path.append(app_dir)
 
 from utils.DataWindow import DataWindow
-from FC.FullyConnected import FullyConnected
+from FC.FC_model import FullyConnected
 from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_AR_pred
 from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD_single, reduce_datasets_VAE_single

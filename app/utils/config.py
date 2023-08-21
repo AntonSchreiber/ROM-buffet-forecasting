@@ -52,6 +52,7 @@ timestep_prediction = 250
 # Model parameters
 ########################################################
 
+#### Dim Reduction ####
 # SVD
 SVD_rank = 300
 
@@ -68,12 +69,15 @@ VAE_latent_size = 32
 
 VAE_model = "32/8_32"
 
-# Fully-Connected
-FC_input_width = 32
-FC_SVD_single_batch_size = 512
-FC_VAE_single_batch_size = 512
-FC_SVD_multi_batch_size = 512
-FC_VAE_multi_batch_size = 1024
+#### Time Evolution ####
+
+input_width = 32
+SVD_single_batch_size = 512
+VAE_single_batch_size = 512
+SVD_multi_batch_size = 512
+VAE_multi_batch_size = 1024
+
+# Fully-Connected (FC)
 FC_learning_rate = 1e-4
 FC_lr_factor = 0.1
 FC_single_epochs = 1000
@@ -83,6 +87,14 @@ FC_patience_earlystop = 50
 
 FC_SVD_single_model = "2_32_256_4"
 FC_VAE_single_model = "7_32_256_6"
+
+# Long Short-Term Memory (LSTM)
+LSTM_learning_rate = 1e-4
+LSTM_lr_factor = 0.1
+LSTM_single_epochs = 1000
+LSTM_multi_epochs = 1000
+LSTM_patience_scheduler = 5
+LSTM_patience_earlystop = 50
 
 
 ########################################################
