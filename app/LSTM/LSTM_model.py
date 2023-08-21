@@ -42,6 +42,9 @@ class LSTM(nn.Module):
         output = self.fc(h_n[-1])
 
         return output
+    
+    def load(self, path: str="", device: str="cpu"):
+        self.load_state_dict(torch.load(path, map_location=torch.device(device)))
 
 
 if __name__ == "__main__":

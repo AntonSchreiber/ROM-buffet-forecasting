@@ -91,8 +91,8 @@ FC_VAE_single_model = "7_32_256_6"
 # Long Short-Term Memory (LSTM)
 LSTM_learning_rate = 1e-4
 LSTM_lr_factor = 0.1
-LSTM_single_epochs = 1000
-LSTM_multi_epochs = 1000
+LSTM_single_epochs = 2000
+LSTM_multi_epochs = 2000
 LSTM_patience_scheduler = 5
 LSTM_patience_earlystop = 50
 
