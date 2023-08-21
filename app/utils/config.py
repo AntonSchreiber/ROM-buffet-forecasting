@@ -77,7 +77,7 @@ FC_VAE_multi_batch_size = 1024
 FC_learning_rate = 1e-4
 FC_lr_factor = 0.1
 FC_single_epochs = 1000
-FC_multi_epochs = 400
+FC_multi_epochs = 1000
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
 
