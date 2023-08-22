@@ -338,8 +338,8 @@ def run_epoch_LSTM(
         targets = targets.permute(0,2,1).to(device)
         
         # init step 
-        pred = model(inputs)
-        loss = loss_func(targets[:,0,:], pred)  
+        preds = model(inputs, device, targets.shape[1])
+        loss = loss_func(targets, preds)  
 
         if model.training:
             loss.backward()
@@ -350,7 +350,7 @@ def run_epoch_LSTM(
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
             labels_true.extend(targets.detach().cpu().tolist())
-            labels_pred.extend(pred.detach().cpu().tolist())
+            labels_pred.extend(preds.detach().cpu().tolist())
 
     # keep track of performance
     results[f"{prefix}_loss"].append(sum(running_loss) / len(running_loss))

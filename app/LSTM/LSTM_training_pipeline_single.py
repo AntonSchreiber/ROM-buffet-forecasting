@@ -28,10 +28,10 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 1
-DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
+PRED_HORIZON = 12
+DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
-BATCH_SIZE = config.SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.VAE_single_batch_size
+BATCH_SIZE = config.LSTM_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.LSTM_VAE_single_batch_size
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
@@ -41,8 +41,8 @@ OUTPUT_PATH = join(parent_dir, "output", "LSTM", "single", DIM_REDUCTION, "param
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [256, 512]
-N_HIDDEN_LAYERS = [2, 3]
+HIDDEN_SIZES = [64]
+N_HIDDEN_LAYERS = [1]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -83,7 +83,8 @@ def start_study(n_repeat):
             model = LSTM(latent_size=N_LATENT, hidden_size=hidden_size, num_layers=n_hidden_layers)
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.Adam(model.parameters(), lr=config.LSTM_learning_rate)
+            # optimizer = pt.optim.Adam(model.parameters(), lr=1e-3)
+            optimizer = pt.optim.RMSprop(model.parameters(), lr=1e-3)
             scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
             earlystopper = EarlyStopper(patience=config.LSTM_patience_earlystop)
 
