@@ -75,13 +75,13 @@ input_width = 32
 
 # Fully-Connected (FC)
 FC_learning_rate = 1e-4
-FC_lr_factor = 0.1
+FC_lr_factor = 0.5
 FC_single_epochs = 1000
 FC_multi_epochs = 1000
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
 
-FC_SVD_single_batch_size = 512
+FC_SVD_single_batch_size = 64
 FC_VAE_single_batch_size = 512
 FC_SVD_multi_batch_size = 512
 FC_VAE_multi_batch_size = 1024
@@ -97,8 +97,8 @@ LSTM_multi_epochs = 2000
 LSTM_patience_scheduler = 5
 LSTM_patience_earlystop = 50
 
-LSTM_SVD_single_batch_size = 512
-LSTM_VAE_single_batch_size = 512
+LSTM_SVD_single_batch_size = 128
+LSTM_VAE_single_batch_size = 128
 LSTM_SVD_multi_batch_size = 512
 LSTM_VAE_multi_batch_size = 1024
 

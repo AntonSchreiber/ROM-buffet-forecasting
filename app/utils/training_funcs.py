@@ -182,18 +182,18 @@ def run_epoch_FC(
 
     # loop over all batches
     for inputs, targets in data_loader:
-        inputs = inputs.flatten(1, 2).to(device)
+        # tensor = pt.transpose(tensor, 1, 2).flatten(1, 2)
+        inputs = pt.transpose(inputs, 1, 2).flatten(1, 2).to(device)
         targets = targets.to(device)
-        
-        # init step 
-        pred = model(inputs)
-        loss = loss_func(targets[:, :, 0], pred)
+        preds = []
 
-        # if pred horizon > 1, shift input sequence by 1 by adding last prediction) and make next predictions
-        for step in range(1, targets.shape[2]):
-            inputs = shift_input_sequence(orig_seq=inputs, new_pred=pred)
-            pred = model(inputs)
-            loss += loss_func(targets[:, :, step], pred)      
+        for step in range(0, targets.shape[2]):
+            if step != 0:
+                inputs = shift_input_sequence(orig_seq=inputs, new_pred=preds[-1])
+            preds.append(model(inputs))
+
+        preds = pt.stack(preds, dim=2)
+        loss = loss_func(targets, preds)
 
         if model.training:
             loss.backward()
@@ -204,7 +204,7 @@ def run_epoch_FC(
         # the dataset might get shuffled in the next loop
         if len(score_funcs) > 0:
             labels_true.extend(targets.detach().cpu().tolist())
-            labels_pred.extend(pred.detach().cpu().tolist())
+            labels_pred.extend(preds.detach().cpu().tolist())
 
     # keep track of performance
     results[f"{prefix}_loss"].append(sum(running_loss) / len(running_loss))

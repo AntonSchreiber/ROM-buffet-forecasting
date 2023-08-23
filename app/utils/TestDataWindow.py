@@ -18,7 +18,7 @@ data_tensor = values.repeat(latent_space_size, 1)
 
 # set and compute DataWindow Variables
 input_width = 4
-pred_horizon = 2
+pred_horizon = 1
 total_window_size = input_width + pred_horizon
 num_windows = num_timesteps - total_window_size + 1
 
@@ -41,7 +41,7 @@ class TestDataWindow(unittest.TestCase):
         data_window = DataWindow(data_tensor, input_width=input_width, pred_horizon=pred_horizon)
         train = data_window.train_dataset
         self.assertEqual(len(train), num_windows)
-
+        
         # rebuild the dataset for the very first feature-label pair
         seq1, pred1 = train[0]
 

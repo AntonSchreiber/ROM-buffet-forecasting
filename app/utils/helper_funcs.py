@@ -117,7 +117,9 @@ def scale_datasets_multi(train_red: pt.Tensor, val_red: pt.Tensor, test_red: pt.
     print("Scaling reduced data to [-1, 1] ... ")
     scaler = MinMaxScaler_1_1().fit(train_red)
     train_red, val_red, test_red = scaler.scale(train_red), scaler.scale(val_red), scaler.scale(test_red)
-    print("     min and max train cp after scaling:         ", train_red.min().item(), train_red.max().item(), "\n")    
+    print("     min and max train cp after scaling:         ", train_red.min().item(), train_red.max().item())    
+    print("     min and max val cp after scaling:           ", val_red.min().item(), val_red.max().item())   
+    print("     min and max test cp after scaling:          ", test_red.min().item(), test_red.max().item(), "\n")   
 
     print("Saving scaler for inference ... ")
     os.makedirs(OUTPUT_PATH, exist_ok=True)
@@ -131,12 +133,13 @@ def reduce_datasets_SVD_single(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
     train_data, test_data = load_datasets_single(DATA_PATH=DATA_PATH, DIM_REDUCTION="SVD")
 
     # load left singular vectors U
-    U = pt.load(SVD_PATH)
+    U = pt.load(join(SVD_PATH, "U.pt"))
+    mean = pt.load(join(SVD_PATH, "mean.pt"))
 
     # reduce datasets
     print("Reducing datasets with Left Singular Vectors ...")
-    train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (train_data - train_data.mean(dim=1).unsqueeze(-1))
-    test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (test_data - test_data.mean(dim=1).unsqueeze(-1))
+    train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (train_data - mean)
+    test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (test_data - mean)
 
     return scale_datasets_single(train_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
 
@@ -177,7 +180,8 @@ def scale_datasets_single(train_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH
     print("Scaling reduced data to [-1, 1] ... ")
     scaler = MinMaxScaler_1_1().fit(train_red)
     train_red, test_red = scaler.scale(train_red), scaler.scale(test_red)
-    print("     min and max train cp after scaling:         ", train_red.min().item(), train_red.max().item(), "\n")    
+    print("     min and max train cp after scaling:         ", train_red.min().item(), train_red.max().item())    
+    print("     min and max test cp after scaling:         ", test_red.min().item(), test_red.max().item(), "\n")    
 
     print("Saving scaler for inference ... ")
     os.makedirs(OUTPUT_PATH, exist_ok=True)

@@ -28,7 +28,7 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 12
+PRED_HORIZON = 1
 DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.LSTM_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.LSTM_VAE_single_batch_size
@@ -50,7 +50,7 @@ def start_study(n_repeat):
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
     print("     number of hidden layers:    ", N_HIDDEN_LAYERS)
 
-    delete_directory_contents(OUTPUT_PATH)
+    # delete_directory_contents(OUTPUT_PATH)
 
     # compress dataset into reduced state either by VAE or SVD
     if DIM_REDUCTION == "VAE":

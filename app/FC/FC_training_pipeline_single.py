@@ -19,7 +19,7 @@ if app_dir not in sys.path:
 from utils.DataWindow import DataWindow
 from FC.FC_model import FullyConnected
 from utils.EarlyStopper import EarlyStopper
-from utils.training_funcs import train_AR_pred
+from utils.training_funcs import train_FC
 from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD_single, reduce_datasets_VAE_single
 import utils.config as config
 
@@ -28,21 +28,21 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 2
+PRED_HORIZON = 1
 DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.FC_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_single_batch_size
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
-SVD_PATH = join(parent_dir, "output", "SVD", "U.pt")
+SVD_PATH = join(parent_dir, "output", "SVD")
 DATA_PATH = join(parent_dir, "data", "single_flow_cond")
 OUTPUT_PATH = join(parent_dir, "output", "FC", "single", DIM_REDUCTION, "param_study", f"pred_horizon_{PRED_HORIZON}")
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [16, 32, 64]
-N_HIDDEN_LAYERS = [3]
+HIDDEN_SIZES = [512]
+N_HIDDEN_LAYERS = [6]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -78,7 +78,7 @@ def start_study(n_repeat):
             data_window = DataWindow(train=train_red, test=test_red, input_width=input_width, pred_horizon=PRED_HORIZON)
 
             train_loader = DataLoader(data_window.train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-            test_loader = DataLoader(data_window.test_dataset, batch_size=BATCH_SIZE, shuffle=True)
+            test_loader = DataLoader(data_window.test_dataset, batch_size=BATCH_SIZE, shuffle=False)
             
             # initialize model and utilities
             model = FullyConnected(
@@ -89,12 +89,12 @@ def start_study(n_repeat):
         )
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.Adam(model.parameters(), lr=config.FC_learning_rate)
-            scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.FC_patience_scheduler, factor=config.FC_lr_factor)
-            earlystopper = EarlyStopper(patience=config.FC_patience_earlystop)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=5e-4)
+            scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=50, factor=config.FC_lr_factor, min_lr=1-5)
+            #earlystopper = EarlyStopper(patience=config.FC_patience_earlystop)
 
             # start training and append resoults to defaultdict
-            study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_AR_pred(
+            study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_FC(
                 model=model,
                 loss_func=loss_func_latent,
                 train_loader=train_loader,
@@ -113,7 +113,7 @@ def start_study(n_repeat):
 
 
 if __name__ == '__main__':
-    start_study(n_repeat=5)
+    start_study(n_repeat=1)
 
     
 
