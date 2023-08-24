@@ -65,9 +65,9 @@ VAE_learning_rate = 1e-4
 VAE_lr_factor = 0.1
 VAE_patience_scheduler = 5
 VAE_patience_earlystop = 50
-VAE_latent_size = 32
+VAE_latent_size = 128
 
-VAE_model = "32/8_32"
+VAE_model = "128/4_128"
 
 #### Time Evolution ####
 
@@ -114,10 +114,10 @@ timesteps_per_second = 2000
 
 standard_figsize_1 = (6, 3)
 standard_figsize_2 = (6, 4)
-plot_lims_MSE_general = [9e-4, 5.5e-3]
-plot_lims_R_squarred = [0.95, 1]
+plot_lims_MSE_general = [2e-3, 1.3e-2]
+plot_lims_R_squarred = [0.93, 1]
 plot_lims_MSE_spatial = (0, 0.018)
-plot_lims_MSE_temporal = [7e-4, 6.8e-3]
+plot_lims_MSE_temporal = [1.5e-3, 1.5e-2]
 plot_lims_cp = (-1, 1)
 plot_lims_MSE_reconstruction = [0, 0.05]
 plot_lims_MSE_FC_single_heatmap = [3e-1, 1e1]
