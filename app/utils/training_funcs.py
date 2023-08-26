@@ -174,7 +174,7 @@ def run_epoch_FC(
     score_funcs: dict,
     prefix: str
     ) -> float:
-    """Perform one epoch with optimizing steps on an autoregressively trained model"""
+    """Perform one epoch with optimizing steps on an autoregressive model"""
 
     # keeping track of loss, predictions, and time
     running_loss, labels_true, labels_pred = [], [], []
@@ -182,7 +182,6 @@ def run_epoch_FC(
 
     # loop over all batches
     for inputs, targets in data_loader:
-        # tensor = pt.transpose(tensor, 1, 2).flatten(1, 2)
         inputs = pt.transpose(inputs, 1, 2).flatten(1, 2).to(device)
         targets = targets.to(device)
         preds = []
@@ -193,6 +192,7 @@ def run_epoch_FC(
             preds.append(model(inputs))
 
         preds = pt.stack(preds, dim=2)
+
         loss = loss_func(targets, preds)
 
         if model.training:

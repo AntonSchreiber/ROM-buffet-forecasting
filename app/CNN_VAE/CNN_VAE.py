@@ -227,7 +227,7 @@ class Autoencoder(nn.Module):
         self._decoder.load_state_dict(torch.load(path + "_decoder.pt", map_location=torch.device(device)))
 
     def encode_dataset(self, dataset: torch.Tensor, device: str="cpu"):
-        assert len(dataset.shape) == 3 and f"Datasets needs 3 dimensions [Height, Width, Timestep]"
+        assert len(dataset.shape) == 3 and f"Datasets needs 3 dimensions [Height, Width, Num Timesteps]"
         with torch.no_grad():
             dataset = dataset.to(device)
             return torch.stack([self._encoder(dataset[:, :, n].unsqueeze(0).unsqueeze(0)).squeeze(0).detach() for n in range(dataset.shape[2])], dim=1)

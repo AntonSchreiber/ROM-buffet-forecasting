@@ -31,7 +31,7 @@ mini_test_per_cond = 4
 
 # Pre-Processing for single flow cond pipeline
 single_flow_cond = 'ma0.84_alpha4.00'
-single_flow_cond_train_share = .8   # 80% training data -> 20% test data
+single_flow_cond_train_share = .8   # 90% training data -> 10% test data
 
 # Pre-Processing for single flow cond pipeline
 train_keys_multi = ['ma0.84_alpha3.00', 'ma0.84_alpha3.50', 'ma0.84_alpha4.50', 'ma0.84_alpha5.00']
@@ -76,12 +76,12 @@ input_width = 32
 # Fully-Connected (FC)
 FC_learning_rate = 1e-4
 FC_lr_factor = 0.5
-FC_single_epochs = 1000
+FC_single_epochs = 6000
 FC_multi_epochs = 1000
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
 
-FC_SVD_single_batch_size = 64
+FC_SVD_single_batch_size = 128
 FC_VAE_single_batch_size = 512
 FC_SVD_multi_batch_size = 512
 FC_VAE_multi_batch_size = 1024

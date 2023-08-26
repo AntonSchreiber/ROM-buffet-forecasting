@@ -202,9 +202,8 @@ def autoencoder_preprocessing():
 def single_flow_cond_preprocessing():
     """ preprocessing for the single flow condition pipeline 
 
-    Angles of Attack:
-        - train:    4.0 (first 80%)
-        - test:     4.0 (last 20%)
+    - train:    4.0 (first 90%)
+    - test:     4.0 (last 10%)
     """
     print("Creating SVD and VAE datasets for the single flow condition training pipeline ...")
     # load interpolated dataset and pick a flow condition

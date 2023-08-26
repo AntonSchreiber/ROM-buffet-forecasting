@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
 # include app directory into sys.path
-REMOTE= True
+REMOTE= False
 parent_dir = Path(os.path.abspath('')).parent.parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -35,14 +35,14 @@ BATCH_SIZE = config.LSTM_SVD_single_batch_size if DIM_REDUCTION == "SVD" else co
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
-SVD_PATH = join(parent_dir, "output", "SVD", "U.pt")
+SVD_PATH = join(parent_dir, "output", "SVD")
 DATA_PATH = join(parent_dir, "data", "single_flow_cond")
 OUTPUT_PATH = join(parent_dir, "output", "LSTM", "single", DIM_REDUCTION, "param_study", f"pred_horizon_{PRED_HORIZON}")
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [64]
-N_HIDDEN_LAYERS = [1]
+HIDDEN_SIZES = [256]
+N_HIDDEN_LAYERS = [2]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -83,10 +83,9 @@ def start_study(n_repeat):
             model = LSTM(latent_size=N_LATENT, hidden_size=hidden_size, num_layers=n_hidden_layers)
 
             loss_func_latent = nn.MSELoss()
-            # optimizer = pt.optim.Adam(model.parameters(), lr=1e-3)
-            optimizer = pt.optim.RMSprop(model.parameters(), lr=1e-3)
-            scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
-            earlystopper = EarlyStopper(patience=config.LSTM_patience_earlystop)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-4)
+            # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
+            earlystopper = EarlyStopper(patience=160)
 
             # start training and append resoults to defaultdict
             study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_LSTM(
@@ -95,7 +94,8 @@ def start_study(n_repeat):
                 train_loader=train_loader,
                 val_loader=test_loader,
                 optimizer=optimizer,
-                lr_schedule=scheduler,
+                # lr_schedule=scheduler,
+                early_stopper=earlystopper,
                 epochs=config.LSTM_single_epochs,
                 device=device
             ))
@@ -108,7 +108,7 @@ def start_study(n_repeat):
 
 
 if __name__ == '__main__':
-    start_study(n_repeat=5)
+    start_study(n_repeat=1)
 
     
 
