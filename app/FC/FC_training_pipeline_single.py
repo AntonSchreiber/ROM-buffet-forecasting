@@ -28,8 +28,8 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 24
-DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
+PRED_HORIZON = 4
+DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.FC_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_single_batch_size
 
@@ -41,8 +41,8 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "single", DIM_REDUCTION, "param_s
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [512]
-N_HIDDEN_LAYERS = [5]
+HIDDEN_SIZES = [256, 512, 1024]
+N_HIDDEN_LAYERS = [4, 5, 6]
 
 def start_study(n_repeat):
     print("Training Fully-Connected models with varying model parameters: ")
@@ -89,9 +89,9 @@ def start_study(n_repeat):
         )
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.AdamW(model.parameters(), lr=9e-5)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=7e-5)
             # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=50, factor=config.FC_lr_factor, min_lr=1-5)
-            #earlystopper = EarlyStopper(patience=180)
+            # earlystopper = EarlyStopper(patience=180)
 
             # start training and append resoults to defaultdict
             study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_FC(

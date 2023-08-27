@@ -147,6 +147,33 @@ def reduce_datasets_SVD_single(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
 def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str):
     # load datasets
     train_data, test_data = load_datasets_single(DATA_PATH=DATA_PATH, DIM_REDUCTION="VAE")
+    # coords = pt.load(join(Path(DATA_PATH).parent, "coords_interp.pt"))
+    # xx, yy = coords
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+
+    # combined_data = pt.concat((train_data, test_data), dim=-1)
+
+    # # Set a fixed range for the color scale
+    # color_scale_min = combined_data.min()
+    # color_scale_max = combined_data.max()
+
+    # fig, ax = plt.subplots()
+
+    # def update(frame):
+    #     ax.clear()
+    #     ax.contourf(xx, yy, combined_data[:, :, frame], levels=20, cmap='viridis', vmin=color_scale_min, vmax=color_scale_max)
+    #     ax.set_title(f'Timestep {frame}')
+    #     ax.set_aspect("equal")
+    #     ax.set_xlabel('X Coordinates')
+    #     ax.set_ylabel('Y Coordinates')
+
+    # ani = animation.FuncAnimation(fig, update, frames=combined_data.shape[2], interval=80)
+    # ani.save(join(OUTPUT_PATH, 'VAE_data.gif'), writer='pillow')
+    # plt.close(fig)
+
 
     # load pre-trained autoencoder model
     autoencoder = make_VAE_model(n_latent=config.VAE_latent_size, device=device)
@@ -158,7 +185,26 @@ def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, 
     train_red = autoencoder.encode_dataset(train_data, device)
     test_red = autoencoder.encode_dataset(test_data, device)
 
-    return scale_datasets_single(train_red, test_red, OUTPUT_PATH), autoencoder._decoder
+    # plt.figure(figsize=(10, 5))
+    # num_modes = 28
+    # for i in range(num_modes):
+    #     plt.plot(range(400), train_red[50+i], c='blue', label='Train Data')
+    #     plt.plot(range(400, 500), test_red[50+i], c='orange', label='Test Data')
+
+    # plt.tight_layout()
+    # plt.savefig(join(OUTPUT_PATH, 'VAE_reduced_data.png'))
+
+    train_red, test_red = scale_datasets_single(train_red, test_red, OUTPUT_PATH)
+
+    # plt.figure(figsize=(10, 5))
+    # for i in range(num_modes):
+    #     plt.plot(range(400), train_red[50+i], c='blue', label='Train Data')
+    #     plt.plot(range(400, 500), test_red[50+i], c='orange', label='Test Data')
+
+    # plt.tight_layout()
+    # plt.savefig(join(OUTPUT_PATH, 'VAE_reduced_scaled_data.png'))
+    
+    return (train_red, test_red), autoencoder._decoder
 
 
 def load_datasets_single(DATA_PATH: str, DIM_REDUCTION: str):

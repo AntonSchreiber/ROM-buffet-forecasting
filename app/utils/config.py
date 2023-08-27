@@ -81,12 +81,13 @@ FC_multi_epochs = 1000
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
 
-FC_SVD_single_batch_size = 128
-FC_VAE_single_batch_size = 512
+FC_SVD_single_batch_size = 64
+FC_VAE_single_batch_size = 64
 FC_SVD_multi_batch_size = 512
 FC_VAE_multi_batch_size = 1024
 
-FC_SVD_single_model = "2_32_256_4"
+FC_SVD_pred_horizon = 10
+FC_SVD_single_model = "8_32_512_5"
 FC_VAE_single_model = "7_32_256_6"
 
 # Long Short-Term Memory (LSTM)
