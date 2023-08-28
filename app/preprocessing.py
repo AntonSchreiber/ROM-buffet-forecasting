@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # include app directory into sys.path
-REMOTE= True
+REMOTE= False
 parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -378,6 +378,37 @@ def split_data_all(data: pt.Tensor) -> tuple:
     return train_cp, val_cp, test_cp
 
 
+def end_to_end_preprocessing():
+    """Loads interpolated dataset and wraps it into TensorDatasets for end-to-end training
+    """
+    print("Creating custom autoencoder-LSTM datasets from surface pressure data ...")
+
+    # load interpolated dataset
+    data = pt.load(join(DATA_PATH, "cp_084_500snaps_interp.pt"))
+    data = data[config.single_flow_cond]
+    data.shape
+    print("Flow condtion:       " ,config.single_flow_cond, "\n")
+
+    # split and reshape the data
+    train, test = split_data_single(data)
+
+    # fit a Min-Max-Scaler on the training data
+    print("Fitting Scaler on training data")
+    scaler = MinMaxScaler_1_1().fit(train)
+    pt.save(scaler, join(DATA_PATH, "VAE_LSTM_scaler.pt"))
+
+    # scale all tensors and create custom Datasets
+    print("Making AutoencoderDatasets with the scaled cp")
+    train_dataset = AutoencoderDataset(scaler.scale(train))
+    test_dataset = AutoencoderDataset(scaler.scale(test))    
+
+    # save all datasets
+    print("Saving ...")
+    os.makedirs(join(DATA_PATH, "end_to_end"), exist_ok=True)
+    pt.save(train_dataset, join(DATA_PATH, "end_to_end", "train.pt"))
+    pt.save(test_dataset, join(DATA_PATH, "end_to_end", "test.pt"))
+    print("Done! \n")
+
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
@@ -385,3 +416,4 @@ if __name__ == "__main__":
     autoencoder_preprocessing()
     single_flow_cond_preprocessing()
     multi_flow_cond_preprocessing()
+    end_to_end_preprocessing()

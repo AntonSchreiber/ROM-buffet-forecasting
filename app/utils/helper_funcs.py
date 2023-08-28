@@ -237,6 +237,17 @@ def scale_datasets_single(train_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH
     return train_red, test_red
 
 
+def load_datasets_end_to_end(DATA_PATH: str):
+    """ Load the end-to-end pipeline datasets from the given directory """
+    print("Loading datasets ... ")
+    train_data = pt.load(join(DATA_PATH, f"train.pt"))
+    test_data = pt.load(join(DATA_PATH, f"test.pt"))
+    print("     min and max train cp:           ", train_data.min().item(), train_data.max().item())
+    print("     min and max test cp:           ", test_data.min().item(), test_data.max().item(), "\n")
+
+    return train_data, test_data
+
+
 if __name__ == '__main__':
     orig_seq = pt.rand(2, 4)
     print("Input Sequence:      \n", orig_seq)

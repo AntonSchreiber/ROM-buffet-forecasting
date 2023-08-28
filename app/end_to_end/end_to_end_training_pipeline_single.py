@@ -17,10 +17,12 @@ if app_dir not in sys.path:
       sys.path.append(app_dir)
 
 from utils.DataWindow import DataWindow
+from CNN_VAE.CNN_VAE import ConvDecoder, ConvEncoder
 from LSTM.LSTM_model import LSTM
+from CNN_VAE_LSTM import autoencoder_LSTM
 from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_LSTM
-from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD_single, reduce_datasets_VAE_single
+from utils.helper_funcs import delete_directory_contents, load_datasets_end_to_end
 import utils.config as config
 
 # use GPU if possible
@@ -29,36 +31,27 @@ print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
 PRED_HORIZON = 6
-DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
-N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
-BATCH_SIZE = config.LSTM_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.LSTM_VAE_single_batch_size
+N_LATENT = 128
+BATCH_SIZE = 64
 
 # define paths
-VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
-SVD_PATH = join(parent_dir, "output", "SVD")
-DATA_PATH = join(parent_dir, "data", "single_flow_cond")
-OUTPUT_PATH = join(parent_dir, "output", "LSTM", "single", DIM_REDUCTION, "param_study", f"pred_horizon_{PRED_HORIZON}")
+DATA_PATH = join(parent_dir, "data", "end_to_end")
+OUTPUT_PATH = join(parent_dir, "output", "end_to_end", f"pred_horizon_{PRED_HORIZON}")
 
-# define study parameters of Fully-Connected network
+# define study parameters of LSTM
 INPUT_WIDTHS = [32]
 HIDDEN_SIZES = [256]
 N_HIDDEN_LAYERS = [2]
 
 def start_study(n_repeat):
-    print("Training Fully-Connected models with varying model parameters: ")
+    print("Training LSTM models with varying model parameters: ")
     print("     input width:                ", INPUT_WIDTHS)
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
     print("     number of hidden layers:    ", N_HIDDEN_LAYERS)
 
     delete_directory_contents(OUTPUT_PATH)
 
-    # compress dataset into reduced state either by VAE or SVD
-    if DIM_REDUCTION == "VAE":
-        (train_red, test_red), _ = reduce_datasets_VAE_single(DATA_PATH, VAE_PATH, OUTPUT_PATH, device) 
-    elif DIM_REDUCTION == "SVD":
-        (train_red, test_red), _ = reduce_datasets_SVD_single(DATA_PATH, SVD_PATH, OUTPUT_PATH) 
-    else:
-        raise ValueError("Unknown DIM_REDUCTION")
+    train, test = load_datasets_end_to_end(DATA_PATH)
 
     # start study
     print("Starting study...")
@@ -109,6 +102,3 @@ def start_study(n_repeat):
 
 if __name__ == '__main__':
     start_study(n_repeat=1)
-
-    
-
