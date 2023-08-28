@@ -338,7 +338,7 @@ def run_epoch_LSTM(
         targets = targets.permute(0,2,1).to(device)
         
         # init step 
-        preds = model(inputs, device, targets.shape[1])
+        preds = model(inputs, targets.shape[1])
         loss = loss_func(targets, preds)  
 
         if model.training:

@@ -67,13 +67,14 @@ def reduce_datasets_SVD_multi(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
     train_data, val_data, test_data = load_datasets_multi(DATA_PATH=DATA_PATH, DIM_REDUCTION="SVD")
 
     # load left singular vectors U
-    U = pt.load(SVD_PATH)
+    U = pt.load(join(SVD_PATH, "U.pt"))
+    mean = pt.load(join(SVD_PATH, "mean.pt"))
 
     # reduce datasets
     print("Reducing datasets with Left Singular Vectors ...")
-    train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (train_data - train_data.mean(dim=1).unsqueeze(-1))
-    val_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (val_data - val_data.mean(dim=1).unsqueeze(-1))
-    test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (test_data - test_data.mean(dim=1).unsqueeze(-1))
+    train_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (train_data - mean)
+    val_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (val_data - mean)
+    test_red = pt.transpose(U[:,:config.SVD_rank], 0, 1) @ (test_data - mean)
 
     return scale_datasets_multi(train_red, val_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
 
