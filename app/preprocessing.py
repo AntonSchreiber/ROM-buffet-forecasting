@@ -399,8 +399,11 @@ def end_to_end_preprocessing():
 
     # scale all tensors and create custom Datasets
     print("Making AutoencoderDatasets with the scaled cp")
-    train_dataset = AutoencoderDataset(scaler.scale(train))
-    test_dataset = AutoencoderDataset(scaler.scale(test))    
+    train_dataset = scaler.scale(train)
+    test_dataset = scaler.scale(test)    
+
+    print("Shape of train data:         ", train_dataset.shape)
+    print("Shape of test data:          ", test_dataset.shape)
 
     # save all datasets
     print("Saving ...")
@@ -412,8 +415,8 @@ def end_to_end_preprocessing():
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
-    svd_preprocesing()
-    autoencoder_preprocessing()
-    single_flow_cond_preprocessing()
-    multi_flow_cond_preprocessing()
+    # svd_preprocesing()
+    # autoencoder_preprocessing()
+    # single_flow_cond_preprocessing()
+    # multi_flow_cond_preprocessing()
     end_to_end_preprocessing()
