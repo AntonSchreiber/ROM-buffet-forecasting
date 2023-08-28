@@ -83,7 +83,7 @@ def start_study(n_repeat):
             model = LSTM(latent_size=N_LATENT, hidden_size=hidden_size, num_layers=n_hidden_layers)
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-5)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-4)
             # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
             # earlystopper = EarlyStopper(patience=160)
 
