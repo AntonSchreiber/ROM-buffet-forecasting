@@ -21,7 +21,7 @@ from CNN_VAE.CNN_VAE import ConvDecoder, ConvEncoder
 from LSTM.LSTM_model import LSTM
 from CNN_VAE_LSTM import autoencoder_LSTM
 from utils.EarlyStopper import EarlyStopper
-from utils.training_funcs import train_LSTM
+from utils.training_funcs import train_end_to_end
 from utils.helper_funcs import delete_directory_contents, load_datasets_end_to_end
 import utils.config as config
 
@@ -32,7 +32,7 @@ print("Computing device:        ", device)
 # define prediction horizon and type of dimensionality reduction
 PRED_HORIZON = 1
 N_LATENT = 128
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 
 # define paths
 DATA_PATH = join(parent_dir, "data", "end_to_end")
@@ -69,37 +69,50 @@ def start_study(n_repeat):
 
             # create DataWindow object to create windows of data, feed into DataLoaders
             data_window = DataWindow_end_to_end(train=train, test=test, input_width=input_width, pred_horizon=PRED_HORIZON)
-            train_windows = data_window.train_dataset
-            test_windows = data_window.test_dataset
-            print(len(train_windows), len(test_windows))
-            input_0, target_0 = train_windows[0]
-            print(input_0.shape, target_0.shape)
-
             train_loader = DataLoader(data_window.train_dataset, batch_size=BATCH_SIZE, shuffle=True)
             test_loader = DataLoader(data_window.test_dataset, batch_size=BATCH_SIZE, shuffle=False)
             
-            # # initialize model and utilities
-            # model = LSTM(latent_size=N_LATENT, hidden_size=hidden_size, num_layers=n_hidden_layers)
+            # initialize models
+            encoder = ConvEncoder(
+                in_size=config.target_resolution,
+                n_channels=config.VAE_input_channels,
+                n_latent=N_LATENT,
+                variational=True,
+                layernorm=True
+            )
+            decoder = ConvDecoder(
+                in_size=config.target_resolution,
+                n_channels=config.VAE_output_channels,
+                n_latent=N_LATENT,
+                layernorm=True,
+                squash_output=True
+            )
+            lstm = LSTM(
+                latent_size=N_LATENT, 
+                hidden_size=hidden_size, 
+                num_layers=n_hidden_layers)
+            
+            model = autoencoder_LSTM(encoder=encoder, LSTM=lstm, decoder=decoder)
 
-            # loss_func_latent = nn.MSELoss()
-            # optimizer = pt.optim.AdamW(model.parameters(), lr=1e-5)
-            # # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
-            # # earlystopper = EarlyStopper(patience=160)
+            loss_func_latent = nn.MSELoss()
+            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-4)
+            # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
+            # earlystopper = EarlyStopper(patience=160)
 
-            # # start training and append resoults to defaultdict
-            # study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_LSTM(
-            #     model=model,
-            #     loss_func=loss_func_latent,
-            #     train_loader=train_loader,
-            #     val_loader=test_loader,
-            #     optimizer=optimizer,
-            #     # lr_schedule=scheduler,
-            #     # early_stopper=earlystopper,
-            #     epochs=config.LSTM_single_epochs,
-            #     device=device
-            # ))
-            # pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
-            # print("\n")
+            # start training and append resoults to defaultdict
+            study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_end_to_end(
+                model=model,
+                loss_func=loss_func_latent,
+                train_loader=train_loader,
+                val_loader=test_loader,
+                optimizer=optimizer,
+                # lr_schedule=scheduler,
+                # early_stopper=earlystopper,
+                epochs=1,
+                device=device
+            ))
+            pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
+            print("\n")
         
     # save results of training metrics
     print("========== Study finished, saving results")
