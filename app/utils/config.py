@@ -76,7 +76,8 @@ input_width = 32
 # Fully-Connected (FC)
 FC_learning_rate = 1e-4
 FC_lr_factor = 0.5
-FC_single_epochs = 6000
+FC_SVD_single_epochs = 6000
+FC_VAE_single_epochs = 7000
 FC_multi_epochs = 1000
 FC_patience_scheduler = 5
 FC_patience_earlystop = 50
@@ -86,9 +87,10 @@ FC_VAE_single_batch_size = 64
 FC_SVD_multi_batch_size = 512
 FC_VAE_multi_batch_size = 1024
 
-FC_SVD_pred_horizon = 10
-FC_SVD_single_model = "8_32_512_5"
-FC_VAE_single_model = "7_32_256_6"
+FC_SVD_pred_horizon = 8
+FC_SVD_single_model = "7_32_256_5"
+FC_VAE_pred_horizon = 8
+FC_VAE_single_model = "7_32_128_5"
 
 # Long Short-Term Memory (LSTM)
 LSTM_learning_rate = 1e-4
@@ -115,7 +117,7 @@ timesteps_per_second = 2000
 
 standard_figsize_1 = (6, 3)
 standard_figsize_2 = (6, 4)
-power_sepctra_figsize = (10, 4)
+power_sepctra_figsize = (10, 5)
 plot_lims_MSE_general = [2e-3, 1.3e-2]
 plot_lims_R_squarred = [0.93, 1]
 plot_lims_MSE_spatial = (0, 0.018)
@@ -123,3 +125,5 @@ plot_lims_MSE_temporal = [1.5e-3, 1.5e-2]
 plot_lims_cp = (-1, 1)
 plot_lims_MSE_reconstruction = [0, 0.05]
 plot_lims_MSE_FC_single_heatmap = [3e-1, 1e1]
+plot_lims_power_spectra_single = (5e-7, 1e0)
+plot_lims_power_spectra_multi = (1e-8, 8e-1)
