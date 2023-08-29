@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
 # include app directory into sys.path
-REMOTE= False
+REMOTE= True
 parent_dir = Path(os.path.abspath('')).parent.parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
@@ -32,7 +32,7 @@ print("Computing device:        ", device)
 # define prediction horizon and type of dimensionality reduction
 PRED_HORIZON = 1
 N_LATENT = 128
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 
 # define paths
 DATA_PATH = join(parent_dir, "data", "end_to_end")
@@ -108,7 +108,7 @@ def start_study(n_repeat):
                 optimizer=optimizer,
                 # lr_schedule=scheduler,
                 # early_stopper=earlystopper,
-                epochs=1,
+                epochs=100,
                 device=device
             ))
             pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))

@@ -28,10 +28,11 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 4
+PRED_HORIZON = 3
 DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.LSTM_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.LSTM_VAE_single_batch_size
+EPOCHS = config.LSTM_SVD_single_epochs if DIM_REDUCTION == "SVD" else config.LSTM_VAE_single_epochs
 
 # define paths
 VAE_PATH = join(parent_dir, "output", "VAE", "latent_study", config.VAE_model)
@@ -96,7 +97,7 @@ def start_study(n_repeat):
                 optimizer=optimizer,
                 # lr_schedule=scheduler,
                 # early_stopper=earlystopper,
-                epochs=config.LSTM_single_epochs,
+                epochs=EPOCHS,
                 device=device
             ))
             pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
@@ -108,7 +109,7 @@ def start_study(n_repeat):
 
 
 if __name__ == '__main__':
-    start_study(n_repeat=1)
+    start_study(n_repeat=5)
 
     
 

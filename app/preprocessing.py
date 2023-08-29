@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # include app directory into sys.path
-REMOTE= False
+REMOTE= True
 parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:

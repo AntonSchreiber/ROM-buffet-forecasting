@@ -593,8 +593,12 @@ def train_end_to_end(
         # early stop condition check after each epoch
         if early_stopper and early_stopper.early_stop(results['val_loss'][-1]):
             print("\nEarly stopping at epoch {}! Validation loss did not improve for {} epochs.".format(e+1, early_stopper.patience))
-            break       
+            break     
 
+        # Monitor memory usage
+        memory_allocated = pt.cuda.memory_allocated() / 1024 ** 3
+        memory_cached = pt.cuda.memory_reserved() / 1024 ** 3
+        message += f"; Allocated: {memory_allocated:.2f} GB; Cached: {memory_cached:.2f} GB"
         print(
             "\r", f"Epoch {e+1:4d}/{epochs} - " + message, end=""
         )
