@@ -87,15 +87,15 @@ FC_VAE_single_batch_size = 64
 FC_SVD_multi_batch_size = 512
 FC_VAE_multi_batch_size = 1024
 
-FC_SVD_pred_horizon = 8
+FC_SVD_pred_horizon = 3
 FC_SVD_single_model = "2_32_256_5"
-FC_VAE_pred_horizon = 8
-FC_VAE_single_model = "4_32_128_5"
+FC_VAE_pred_horizon = 4
+FC_VAE_single_model = "1_32_128_5"
 
 # Long Short-Term Memory (LSTM)
 LSTM_learning_rate = 1e-4
 LSTM_lr_factor = 0.1
-LSTM_single_epochs = 5000
+LSTM_single_epochs = 6000
 LSTM_multi_epochs = 2000
 LSTM_patience_scheduler = 5
 LSTM_patience_earlystop = 50

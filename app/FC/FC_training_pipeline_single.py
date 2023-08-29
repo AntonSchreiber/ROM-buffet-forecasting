@@ -28,8 +28,8 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 8
-DIM_REDUCTION = "VAE"       # one of ("SVD" / "VAE")
+PRED_HORIZON = 3
+DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
 BATCH_SIZE = config.FC_SVD_single_batch_size if DIM_REDUCTION == "SVD" else config.FC_VAE_single_batch_size
 EPOCHS = config.FC_SVD_single_epochs if DIM_REDUCTION == "SVD" else config.FC_VAE_single_epochs
@@ -42,7 +42,7 @@ OUTPUT_PATH = join(parent_dir, "output", "FC", "single", DIM_REDUCTION, "param_s
 
 # define study parameters of Fully-Connected network
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [128]
+HIDDEN_SIZES = [256]
 N_HIDDEN_LAYERS = [5]
 
 def start_study(n_repeat):
@@ -90,7 +90,7 @@ def start_study(n_repeat):
         )
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.AdamW(model.parameters(), lr=2e-4)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-4)
             # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=50, factor=config.FC_lr_factor, min_lr=1-5)
             # earlystopper = EarlyStopper(patience=180)
 
