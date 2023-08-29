@@ -32,15 +32,15 @@ print("Computing device:        ", device)
 # define prediction horizon and type of dimensionality reduction
 PRED_HORIZON = 1
 N_LATENT = 128
-BATCH_SIZE = 8
+BATCH_SIZE = 24
 
 # define paths
 DATA_PATH = join(parent_dir, "data", "end_to_end")
-OUTPUT_PATH = join(parent_dir, "output", "end_to_end", f"pred_horizon_{PRED_HORIZON}")
+OUTPUT_PATH = join(parent_dir, "output", "end_to_end", "single", f"pred_horizon_{PRED_HORIZON}")
 
 # define study parameters of LSTM
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [256]
+HIDDEN_SIZES = [128]
 N_HIDDEN_LAYERS = [2]
 
 def start_study(n_repeat):
@@ -111,7 +111,9 @@ def start_study(n_repeat):
                 epochs=100,
                 device=device
             ))
-            pt.save(model.state_dict(), join(OUTPUT_PATH, str(i + 1) + "_" + set_key + ".pt"))
+            # create directory to save model state
+            os.makedirs(OUTPUT_PATH, exist_ok=True)
+            model.save((join(OUTPUT_PATH, str(i + 1) + "_" + set_key)))
             print("\n")
         
     # save results of training metrics
