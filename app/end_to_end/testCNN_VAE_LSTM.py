@@ -31,7 +31,7 @@ class TestAutoencoderLSTM(unittest.TestCase):
             squash_output=True
         )
 
-        self.model = autoencoder_LSTM(self.encoder, self.lstm, self.decoder, self.input_width)
+        self.model = autoencoder_LSTM(self.encoder, self.lstm, self.decoder)
 
     def test_shapes(self):
         batch_size = 64

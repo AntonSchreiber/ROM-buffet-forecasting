@@ -124,6 +124,8 @@ timesteps_per_second = 2000
 standard_figsize_1 = (6, 3)
 standard_figsize_2 = (6, 4)
 power_sepctra_figsize = (10, 5)
+orig_vs_latent_loss_figsize = (10, 2)
+
 plot_lims_MSE_general = [2e-3, 1.3e-2]
 plot_lims_R_squarred = [0.93, 1]
 plot_lims_MSE_spatial = (0, 0.018)
@@ -133,3 +135,4 @@ plot_lims_MSE_reconstruction = [0, 0.05]
 plot_lims_MSE_FC_single_heatmap = [3e-1, 1e1]
 plot_lims_power_spectra_single = (5e-7, 1e0)
 plot_lims_power_spectra_multi = (1e-8, 8e-1)
+plot_lims_orig_vs_latent_loss = [6e-4, 2e-2]

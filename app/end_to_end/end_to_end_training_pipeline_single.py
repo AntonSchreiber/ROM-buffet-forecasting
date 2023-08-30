@@ -30,8 +30,8 @@ device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
 # define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 1
-N_LATENT = 128
+PRED_HORIZON = 3
+N_LATENT = 64
 BATCH_SIZE = 24
 
 # define paths
@@ -40,7 +40,7 @@ OUTPUT_PATH = join(parent_dir, "output", "end_to_end", "single", f"pred_horizon_
 
 # define study parameters of LSTM
 INPUT_WIDTHS = [32]
-HIDDEN_SIZES = [128]
+HIDDEN_SIZES = [64]
 N_HIDDEN_LAYERS = [2]
 
 def start_study(n_repeat):
@@ -108,7 +108,7 @@ def start_study(n_repeat):
                 optimizer=optimizer,
                 # lr_schedule=scheduler,
                 # early_stopper=earlystopper,
-                epochs=100,
+                epochs=5000,
                 device=device
             ))
             # create directory to save model state
