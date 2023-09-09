@@ -63,6 +63,9 @@ class ConvEncoder(nn.Module):
         :param batchnorm: batch normalization is applied to each convolutional
           layer if True, defaults to False
         :type batchnorm: bool, optional
+        :param layernorm: layer normalization is applied to each convolutional
+          layer if True, defaults to False
+        :type layernorm: bool, optional
         :param variational: latent features are sampled from a normal distribution
           if True and KL-divergence is computed to train the encoder, defaults to False
         :type variational: bool, optional
@@ -78,6 +81,9 @@ class ConvEncoder(nn.Module):
 
         # check input dimensions
         assert power_of_two(self._in_size), "Input sizes must be a power of two."
+
+        # check duplicate normalization
+        assert self._batchnorm == True and self._layernorm == True, "Either batchnorm or layernorm can be true."
 
         # create convolutional layers with optional batch normalization
         self._layers = nn.ModuleList()
@@ -151,6 +157,9 @@ class ConvDecoder(nn.Module):
         :param batchnorm: batch normalization is applied after each
           convolutional layer if True, defaults to False
         :type batchnorm: bool, optional
+        :param layernorm: layer normalization is applied to each convolutional
+          layer if True, defaults to False
+        :type layernorm: bool, optional
         :param squash_output: output is limited to the range [-1, 1] by using
           a tanh activation function, defaults to False
         :type squash_output: bool, optional
@@ -163,6 +172,9 @@ class ConvDecoder(nn.Module):
         self._batchnorm = batchnorm
         self._layernorm = layernorm
         self._squash_output = squash_output
+
+        # check duplicate normalization
+        assert self._batchnorm == True and self._layernorm == True, "Either batchnorm or layernorm can be true."
 
         # create fully-connected layer as adapter between latent
         # variables and first convolution
@@ -227,14 +239,24 @@ class Autoencoder(nn.Module):
         self._decoder.load_state_dict(torch.load(path + "_decoder.pt", map_location=torch.device(device)))
 
     def encode_dataset(self, dataset: torch.Tensor, device: str="cpu"):
+        """ convenient encoding function that encodes pressure datasets with shape [Height, Width, Num Timesteps]"""
         assert len(dataset.shape) == 3 and f"Datasets needs 3 dimensions [Height, Width, Num Timesteps]"
+
         with torch.no_grad():
             dataset = dataset.to(device)
             return torch.stack([self._encoder(dataset[:, :, n].unsqueeze(0).unsqueeze(0)).squeeze().detach() for n in range(dataset.shape[2])], dim=1)
         
 
-# function to create VAE model
 def make_VAE_model(n_latent: int, device: str) -> nn.Module:
+    """creates a convolutional VAE neural network
+
+    Args:
+        n_latent (int): number of bottleneck neurons
+        device (str): computation device, e.g. "cuda"
+
+    Returns:
+        nn.Module: convolutional VAE neural network
+    """
     encoder = ConvEncoder(
         in_size=config.target_resolution,
         n_channels=config.VAE_input_channels,
