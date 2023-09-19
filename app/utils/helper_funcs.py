@@ -3,7 +3,7 @@ import os
 from os.path import join
 from pathlib import Path
 import torch as pt
-from CNN_VAE.CNN_VAE import make_VAE_model
+from autoencoder.CNN_VAE import make_VAE_model
 import utils.config as config
 from utils.Scaler import MinMaxScaler_1_1
 
