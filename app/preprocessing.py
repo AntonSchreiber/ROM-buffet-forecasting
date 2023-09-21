@@ -4,8 +4,7 @@ import sys
 from pathlib import Path
 
 # include app directory into sys.path
-REMOTE= True
-parent_dir = Path(os.path.abspath('')).parent if REMOTE else Path(os.path.abspath(''))
+parent_dir = Path(os.path.abspath(''))
 app_dir = join(parent_dir, "app")
 if app_dir not in sys.path:
       sys.path.append(app_dir)
@@ -415,8 +414,8 @@ def end_to_end_preprocessing():
 if __name__ == "__main__":
     # interpolate_coords()
     # make_data_subset()
-    # svd_preprocesing()
-    # autoencoder_preprocessing()
-    # single_flow_cond_preprocessing()
-    # multi_flow_cond_preprocessing()
+    svd_preprocesing()
+    autoencoder_preprocessing()
+    single_flow_cond_preprocessing()
+    multi_flow_cond_preprocessing()
     end_to_end_preprocessing()
