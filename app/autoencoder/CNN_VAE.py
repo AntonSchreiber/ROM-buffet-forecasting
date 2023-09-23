@@ -83,7 +83,7 @@ class ConvEncoder(nn.Module):
         assert power_of_two(self._in_size), "Input sizes must be a power of two."
 
         # check duplicate normalization
-        assert self._batchnorm == True and self._layernorm == True, "Either batchnorm or layernorm can be true."
+        assert (self._batchnorm ^ self._layernorm), "Either batchnorm or layernorm can be true."
 
         # create convolutional layers with optional batch normalization
         self._layers = nn.ModuleList()
@@ -174,7 +174,7 @@ class ConvDecoder(nn.Module):
         self._squash_output = squash_output
 
         # check duplicate normalization
-        assert self._batchnorm == True and self._layernorm == True, "Either batchnorm or layernorm can be true."
+        assert (self._batchnorm ^ self._layernorm), "Either batchnorm or layernorm can be true."
 
         # create fully-connected layer as adapter between latent
         # variables and first convolution

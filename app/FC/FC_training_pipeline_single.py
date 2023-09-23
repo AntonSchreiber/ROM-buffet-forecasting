@@ -2,6 +2,13 @@ import sys
 import os
 from os.path import join
 from pathlib import Path
+
+# include app directory into sys.path
+parent_dir = Path(os.path.abspath(''))
+app_dir = join(parent_dir, "app")
+if app_dir not in sys.path:
+      sys.path.append(app_dir)
+
 from itertools import product
 from collections import defaultdict
 import torch as pt
@@ -9,25 +16,17 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
-# include app directory into sys.path
-REMOTE= True
-parent_dir = Path(os.path.abspath('')).parent.parent if REMOTE else Path(os.path.abspath(''))
-app_dir = join(parent_dir, "app")
-if app_dir not in sys.path:
-      sys.path.append(app_dir)
-
 from utils.DataWindow import DataWindow
 from FC.FC_model import FullyConnected
-from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_FC
 from utils.helper_funcs import delete_directory_contents, reduce_datasets_SVD_single, reduce_datasets_VAE_single
-import utils.config as config
+from utils import config
 
 # use GPU if possible
 device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
-# define prediction horizon and type of dimensionality reduction
+# define parameters
 PRED_HORIZON = 3
 DIM_REDUCTION = "SVD"       # one of ("SVD" / "VAE")
 N_LATENT = config.SVD_rank if DIM_REDUCTION == "SVD" else config.VAE_latent_size
@@ -45,7 +44,9 @@ INPUT_WIDTHS = [32]
 HIDDEN_SIZES = [256]
 N_HIDDEN_LAYERS = [5]
 
-def start_study(n_repeat):
+def start_study_repeat(n_repeat):
+    ''' run param study for different architectures with a given number of training iterations'''
+
     print("Training Fully-Connected models with varying model parameters: ")
     print("     input width:                ", INPUT_WIDTHS)
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
@@ -90,9 +91,7 @@ def start_study(n_repeat):
         )
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-4)
-            # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=50, factor=config.FC_lr_factor, min_lr=1-5)
-            # earlystopper = EarlyStopper(patience=180)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=config.FC_learning_rate)
 
             # start training and append resoults to defaultdict
             study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_FC(
@@ -101,8 +100,6 @@ def start_study(n_repeat):
                 train_loader=train_loader,
                 val_loader=test_loader,
                 optimizer=optimizer,
-                #lr_schedule=scheduler,
-                #early_stopper=earlystopper,
                 epochs=EPOCHS,
                 device=device
             ))
@@ -115,7 +112,7 @@ def start_study(n_repeat):
 
 
 if __name__ == '__main__':
-    start_study(n_repeat=5)
+    start_study_repeat(n_repeat=5)
 
     
 

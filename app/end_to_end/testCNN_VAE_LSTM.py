@@ -1,6 +1,17 @@
+import sys
+import os
+from os.path import join
+from pathlib import Path
+
+# include app directory into sys.path
+parent_dir = Path(os.path.abspath(''))
+app_dir = join(parent_dir, "app")
+if app_dir not in sys.path:
+      sys.path.append(app_dir)
+
 import unittest
 import torch
-from CNN_VAE.CNN_VAE import ConvEncoder, ConvDecoder
+from autoencoder.CNN_VAE import ConvEncoder, ConvDecoder
 from LSTM.LSTM_model import LSTM
 from CNN_VAE_LSTM import autoencoder_LSTM  
 from utils import config

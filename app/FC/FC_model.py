@@ -1,11 +1,23 @@
-# class for a simple fully-connected network architecture as baseline model of this study
-# modified version of https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/building.html 
+"""Simple LSTM network for time-series forecasting.
+
+modified version of https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/building.html 
+"""
+
 import torch
 from torch import nn
 
 class FullyConnected(nn.Module):
     def __init__(self, latent_size: int, input_width: int, hidden_size: int, n_hidden_layers: int):
+        """Create an FC instance.
+
+        Args:
+            latent_size (int): number of latent dimensions
+            input_width (int): length of the input sequence
+            hidden_size (int): number of neurons in each hidden layer
+            n_hidden_layers (int): number of hidden layers
+        """
         super().__init__()
+        # the input layer is a concatenation of the input sequence
         self.input_size = input_width * latent_size
         self.output_size = latent_size
         self.hidden_size = hidden_size
@@ -38,13 +50,3 @@ def make_FC_model(latent_size: int, input_width: int, hidden_size: int, n_hidden
         hidden_size=hidden_size,
         n_hidden_layers=n_hidden_layers
     )
-
-
-if __name__ == '__main__':
-    fc = make_FC_model(16, 8, 8, 1)
-    print(fc)
-
-    data = torch.rand(16 * 8)
-    print("Input shape:     ", data.shape)
-    data = fc(data)
-    print("Output shape:    ", data.shape)

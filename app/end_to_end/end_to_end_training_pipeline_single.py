@@ -2,6 +2,13 @@ import sys
 import os
 from os.path import join
 from pathlib import Path
+
+# include app directory into sys.path
+parent_dir = Path(os.path.abspath(''))
+app_dir = join(parent_dir, "app")
+if app_dir not in sys.path:
+      sys.path.append(app_dir)
+
 from itertools import product
 from collections import defaultdict
 import torch as pt
@@ -9,56 +16,49 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 pt.manual_seed(0)
 
-# include app directory into sys.path
-REMOTE= True
-parent_dir = Path(os.path.abspath('')).parent.parent if REMOTE else Path(os.path.abspath(''))
-app_dir = join(parent_dir, "app")
-if app_dir not in sys.path:
-      sys.path.append(app_dir)
-
 from utils.DataWindow import DataWindow_end_to_end
-from CNN_VAE.CNN_VAE import ConvDecoder, ConvEncoder
+from autoencoder.CNN_VAE import ConvDecoder, ConvEncoder
 from LSTM.LSTM_model import LSTM
 from CNN_VAE_LSTM import autoencoder_LSTM
-from utils.EarlyStopper import EarlyStopper
 from utils.training_funcs import train_end_to_end
 from utils.helper_funcs import delete_directory_contents, load_datasets_end_to_end
-import utils.config as config
+from utils import config
 
 # use GPU if possible
 device = pt.device("cuda") if pt.cuda.is_available() else pt.device("cpu")
 print("Computing device:        ", device)
 
-# define prediction horizon and type of dimensionality reduction
-PRED_HORIZON = 3
-N_LATENT = 64
-BATCH_SIZE = 24
+# define parameters
+PRED_HORIZON = config.E2E_pred_horizon
+N_LATENT = config.E2E_latent_size
+BATCH_SIZE = config.E2E_batch_size
 
 # define paths
 DATA_PATH = join(parent_dir, "data", "end_to_end")
 OUTPUT_PATH = join(parent_dir, "output", "end_to_end", "single", f"pred_horizon_{PRED_HORIZON}")
 
-# define study parameters of LSTM
+# define study parameters of model
 INPUT_WIDTHS = [32]
 HIDDEN_SIZES = [64]
 N_HIDDEN_LAYERS = [2]
 
-def start_study(n_repeat):
-    print("Training LSTM models with varying model parameters: ")
+def start_study_repeat(n_repeat):
+    ''' run param study for different architectures with a given number of training iterations'''
+    
+    print("Training E2E models with varying model parameters: ")
     print("     input width:                ", INPUT_WIDTHS)
     print("     neurons in hidden layers:   ", HIDDEN_SIZES)
     print("     number of hidden layers:    ", N_HIDDEN_LAYERS)
 
     delete_directory_contents(OUTPUT_PATH)
-
     train, test = load_datasets_end_to_end(DATA_PATH)
 
-    # start study
     print("Starting study...")
     study_results = defaultdict(list)
     param_combinations = list(product(INPUT_WIDTHS, HIDDEN_SIZES, N_HIDDEN_LAYERS))
     print(f"'---> {len(param_combinations) * n_repeat} trainings in total")
 
+    # train each model architecture n_repeat times
     for i in range(n_repeat):
         print("---Iteration %d--------" %(i+1))
         pt.manual_seed(i)
@@ -95,9 +95,7 @@ def start_study(n_repeat):
             model = autoencoder_LSTM(encoder=encoder, LSTM=lstm, decoder=decoder)
 
             loss_func_latent = nn.MSELoss()
-            optimizer = pt.optim.AdamW(model.parameters(), lr=1e-4)
-            # scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", patience=config.LSTM_patience_scheduler, factor=config.LSTM_lr_factor)
-            # earlystopper = EarlyStopper(patience=160)
+            optimizer = pt.optim.AdamW(model.parameters(), lr=config.E2E_learning_rate)
 
             # start training and append resoults to defaultdict
             study_results[f"{input_width}_{hidden_size}_{n_hidden_layers}"].append(train_end_to_end(
@@ -106,9 +104,7 @@ def start_study(n_repeat):
                 train_loader=train_loader,
                 val_loader=test_loader,
                 optimizer=optimizer,
-                # lr_schedule=scheduler,
-                # early_stopper=earlystopper,
-                epochs=5000,
+                epochs=config.E2E_epochs,
                 device=device
             ))
             # create directory to save model state
@@ -122,4 +118,4 @@ def start_study(n_repeat):
 
 
 if __name__ == '__main__':
-    start_study(n_repeat=1)
+    start_study_repeat(n_repeat=1)

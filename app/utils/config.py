@@ -1,15 +1,5 @@
 # CONFIGURATION FILE
 
-import logging
-
-# Logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-########################################################
-# Paths
-########################################################
-# TODO add later if time left
-
 ########################################################
 # Pre-Processing
 ########################################################
@@ -66,7 +56,6 @@ VAE_lr_factor = 0.1
 VAE_patience_scheduler = 5
 VAE_patience_earlystop = 50
 VAE_latent_size = 128
-
 VAE_model = "128/4_128"
 
 #### Time Evolution ####
@@ -83,8 +72,6 @@ FC_patience_earlystop = 50
 
 FC_SVD_single_batch_size = 64
 FC_VAE_single_batch_size = 64
-FC_SVD_multi_batch_size = 512
-FC_VAE_multi_batch_size = 1024
 
 FC_SVD_pred_horizon = 3
 FC_SVD_single_model = "5_32_256_5"
@@ -92,7 +79,7 @@ FC_VAE_pred_horizon = 4
 FC_VAE_single_model = "1_32_128_5"
 
 # Long Short-Term Memory (LSTM)
-LSTM_learning_rate = 1e-4
+LSTM_learning_rate = 8e-5
 LSTM_lr_factor = 0.1
 LSTM_SVD_single_epochs = 5000
 LSTM_VAE_single_epochs = 5000
@@ -102,14 +89,18 @@ LSTM_patience_earlystop = 50
 
 LSTM_SVD_single_batch_size = 64
 LSTM_VAE_single_batch_size = 64
-LSTM_SVD_multi_batch_size = 512
-LSTM_VAE_multi_batch_size = 1024
 
 LSTM_SVD_pred_horizon = 3
 LSTM_SVD_single_model = "1_32_256_2"
 LSTM_VAE_pred_horizon = 3
 LSTM_VAE_single_model = "4_32_128_2"
 
+# End-to-End model (CNN-VAE-LSTM)
+E2E_learning_rate = 1e-4
+E2E_epochs = 5000
+E2E_batch_size = 24
+E2E_latent_size = 64
+E2E_pred_horizon = 3
 
 
 ########################################################

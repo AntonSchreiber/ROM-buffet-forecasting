@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from CNN_VAE.CNN_VAE import ConvEncoder, ConvDecoder
+from autoencoder.CNN_VAE import ConvEncoder, ConvDecoder
 from LSTM.LSTM_model import LSTM
 
 class autoencoder_LSTM(nn.Module):
