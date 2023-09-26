@@ -1,7 +1,7 @@
 """
 These training loop functions are modified versions of the functions provided in chapter 5 of 'Inside Deep Learning' by Edward Raff;
-    refer to: https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py
-    and: https://github.com/AndreWeiner/ml-cfd-lecture/blob/main/notebooks/ml_intro.ipynb 
+    refer to:   https://github.com/EdwardRaff/Inside-Deep-Learning/blob/main/idlmam.py (original)
+    and:        https://github.com/AndreWeiner/ml-cfd-lecture/blob/main/notebooks/ml_intro.ipynb (already modified)
 """
 
 import sys
@@ -15,7 +15,6 @@ from collections import defaultdict
 import torch as pt
 import pandas as pd
 
-import utils.config as config
 from utils.EarlyStopper import EarlyStopper
 from utils.helper_funcs import shift_input_sequence
 

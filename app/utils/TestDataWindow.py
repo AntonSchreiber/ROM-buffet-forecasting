@@ -4,8 +4,7 @@ from os.path import join
 from pathlib import Path
 
 # include app directory into sys.path
-parent_dir = Path(os.path.abspath(''))
-app_dir = join(parent_dir, "app")
+app_dir = join(Path(os.path.abspath('')), "app")
 if app_dir not in sys.path:
       sys.path.append(app_dir)
 
