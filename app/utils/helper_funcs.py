@@ -61,7 +61,7 @@ def shift_input_sequence(orig_seq: pt.Tensor, new_pred: pt.Tensor) -> pt.Tensor:
     return orig_seq_copy
 
 
-def reduce_datasets_SVD_multi(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
+def reduce_datasets_SVD_multi(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str) -> tuple:
     """ Reduce datasets with the left singular vectors of the SVD for the training of neural networks
     in the latent space.
 
@@ -91,7 +91,7 @@ def reduce_datasets_SVD_multi(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
     return scale_datasets_multi(train_red, val_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
 
 
-def reduce_datasets_VAE_multi(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str):
+def reduce_datasets_VAE_multi(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str) -> tuple:
     """ Encode datasets with the CNN-VAE for the training of neural networks
     in the latent space.
 
@@ -122,8 +122,8 @@ def reduce_datasets_VAE_multi(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, d
     return scale_datasets_multi(train_red, val_red, test_red, OUTPUT_PATH), autoencoder._decoder
 
 
-def load_datasets_multi(DATA_PATH: str, DIM_REDUCTION: str):
-    """ Load the pipeline datasets from the given directory """
+def load_datasets_multi(DATA_PATH: str, DIM_REDUCTION: str) -> tuple:
+    """ Load the multiple flow condition pipeline datasets from the given directory """
     
     print("Loading datasets ... ")
     train_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_train.pt"))
@@ -134,7 +134,9 @@ def load_datasets_multi(DATA_PATH: str, DIM_REDUCTION: str):
     return train_data, val_data, test_data
 
 
-def scale_datasets_multi(train_red: pt.Tensor, val_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH: str):
+def scale_datasets_multi(train_red: pt.Tensor, val_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH: str) -> tuple:
+    """ Scale training, validation and test data and save scaler for inference """
+
     print("     Shape of reduced train data:                ", train_red.shape)
     print("     Shape of reduced val data:                  ", val_red.shape)
     print("     Shape of reduced test data:                 ", test_red.shape)
@@ -155,7 +157,20 @@ def scale_datasets_multi(train_red: pt.Tensor, val_red: pt.Tensor, test_red: pt.
     return train_red, val_red, test_red
 
 
-def reduce_datasets_SVD_single(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
+def reduce_datasets_SVD_single(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str) -> tuple:
+    """ Reduce datasets with the left singular vectors of the SVD for the training of neural networks
+    in the latent space.
+
+    For training with a single flow condition.
+
+    Args:
+        DATA_PATH (str): Path to the data directory.
+        SVD_PATH (str): Path to the SVD directory.
+        OUTPUT_PATH (str): Path to the output directory.
+
+    Returns:
+        (tuple): reduced and scaled datasets, U
+    """
     # load datasets
     train_data, test_data = load_datasets_single(DATA_PATH=DATA_PATH, DIM_REDUCTION="SVD")
 
@@ -171,36 +186,22 @@ def reduce_datasets_SVD_single(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
     return scale_datasets_single(train_red, test_red, OUTPUT_PATH), U[:,:config.SVD_rank]
 
 
-def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str):
+def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str) -> tuple:
+    """ Encode datasets with the CNN-VAE for the training of neural networks
+    in the latent space.
+
+    For training with multiple flow conditions.
+
+    Args:
+        DATA_PATH (str): Path to the data directory.
+        SVD_PATH (str): Path to the SVD directory.
+        OUTPUT_PATH (str): Path to the output directory.
+
+    Returns:
+        (tuple): reduced and scaled datasets, decoder
+    """
     # load datasets
     train_data, test_data = load_datasets_single(DATA_PATH=DATA_PATH, DIM_REDUCTION="VAE")
-    # coords = pt.load(join(Path(DATA_PATH).parent, "coords_interp.pt"))
-    # xx, yy = coords
-
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib.animation as animation
-
-    # combined_data = pt.concat((train_data, test_data), dim=-1)
-
-    # # Set a fixed range for the color scale
-    # color_scale_min = combined_data.min()
-    # color_scale_max = combined_data.max()
-
-    # fig, ax = plt.subplots()
-
-    # def update(frame):
-    #     ax.clear()
-    #     ax.contourf(xx, yy, combined_data[:, :, frame], levels=20, cmap='viridis', vmin=color_scale_min, vmax=color_scale_max)
-    #     ax.set_title(f'Timestep {frame}')
-    #     ax.set_aspect("equal")
-    #     ax.set_xlabel('X Coordinates')
-    #     ax.set_ylabel('Y Coordinates')
-
-    # ani = animation.FuncAnimation(fig, update, frames=combined_data.shape[2], interval=80)
-    # ani.save(join(OUTPUT_PATH, 'VAE_data.gif'), writer='pillow')
-    # plt.close(fig)
-
 
     # load pre-trained autoencoder model
     autoencoder = make_VAE_model(n_latent=config.VAE_latent_size, device=device)
@@ -211,31 +212,14 @@ def reduce_datasets_VAE_single(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, 
     print("Reducing datasets with Autoencoder ...")
     train_red = autoencoder.encode_dataset(train_data, device)
     test_red = autoencoder.encode_dataset(test_data, device)
-
-    # plt.figure(figsize=(10, 5))
-    # num_modes = 28
-    # for i in range(num_modes):
-    #     plt.plot(range(400), train_red[50+i], c='blue', label='Train Data')
-    #     plt.plot(range(400, 500), test_red[50+i], c='orange', label='Test Data')
-
-    # plt.tight_layout()
-    # plt.savefig(join(OUTPUT_PATH, 'VAE_reduced_data.png'))
-
     train_red, test_red = scale_datasets_single(train_red, test_red, OUTPUT_PATH)
-
-    # plt.figure(figsize=(10, 5))
-    # for i in range(num_modes):
-    #     plt.plot(range(400), train_red[50+i], c='blue', label='Train Data')
-    #     plt.plot(range(400, 500), test_red[50+i], c='orange', label='Test Data')
-
-    # plt.tight_layout()
-    # plt.savefig(join(OUTPUT_PATH, 'VAE_reduced_scaled_data.png'))
     
     return (train_red, test_red), autoencoder._decoder
 
 
-def load_datasets_single(DATA_PATH: str, DIM_REDUCTION: str):
-    """ Load the pipeline datasets from the given directory """
+def load_datasets_single(DATA_PATH: str, DIM_REDUCTION: str) -> tuple:
+    """ Load the single flow condition pipeline datasets from the given directory """
+
     print("Loading datasets ... ")
     train_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_train.pt"))
     test_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_test.pt"))
@@ -244,7 +228,9 @@ def load_datasets_single(DATA_PATH: str, DIM_REDUCTION: str):
     return train_data, test_data
 
 
-def scale_datasets_single(train_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH: str):
+def scale_datasets_single(train_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH: str) -> tuple:
+    """ Scale training, validation and test data and save scaler for inference """
+
     print("     Shape of reduced train data:                ", train_red.shape)
     print("     Shape of reduced test data:                 ", test_red.shape)
     print("     min and max train cp after reduction:       ", train_red.min().item(), train_red.max().item(), "\n")
@@ -263,8 +249,9 @@ def scale_datasets_single(train_red: pt.Tensor, test_red: pt.Tensor, OUTPUT_PATH
     return train_red, test_red
 
 
-def load_datasets_end_to_end(DATA_PATH: str):
-    """ Load the end-to-end pipeline datasets from the given directory """
+def load_datasets_end_to_end(DATA_PATH: str) -> tuple:
+    """ Load the single flow condition end-to-end pipeline datasets from the given directory """
+
     print("Loading datasets ... ")
     train_data = pt.load(join(DATA_PATH, f"train.pt"))
     test_data = pt.load(join(DATA_PATH, f"test.pt"))
@@ -272,17 +259,3 @@ def load_datasets_end_to_end(DATA_PATH: str):
     print("     min and max test cp:           ", test_data.min().item(), test_data.max().item(), "\n")
 
     return train_data, test_data
-
-
-if __name__ == '__main__':
-    orig_seq = pt.rand(2, 4)
-    print("Input Sequence:      \n", orig_seq)
-
-    for step in range(4):
-        # shift input sequence by one: add last prediction while discarding first input
-        if step != 0:
-            orig_seq = shift_input_sequence(orig_seq=orig_seq, new_pred=new_pred)
-            print("Input Sequence:      \n", orig_seq)
-        # new prediction is sum of all previous elements
-        new_pred = orig_seq.sum(dim=1, keepdim=True)
-        print("Prediction:      \n", new_pred)
