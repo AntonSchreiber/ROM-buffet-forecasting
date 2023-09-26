@@ -102,6 +102,9 @@ E2E_batch_size = 24
 E2E_latent_size = 64
 E2E_pred_horizon = 3
 
+E2E_pred_horizon = 3
+E2E_model = "1_32_64_2"
+
 
 ########################################################
 # Plots
@@ -127,3 +130,5 @@ plot_lims_MSE_FC_single_heatmap = [3e-1, 1e1]
 plot_lims_power_spectra_single = (5e-7, 1e0)
 plot_lims_power_spectra_multi = (1e-8, 8e-1)
 plot_lims_orig_vs_latent_loss = [6e-4, 2e-2]
+
+plot_E2E_color = '#FFA500'
