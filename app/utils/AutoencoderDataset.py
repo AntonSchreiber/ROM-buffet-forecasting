@@ -1,13 +1,12 @@
 import torch as pt
 from torch.utils.data import Dataset
 
-
 class AutoencoderDataset(Dataset):
     def __init__(self, cp: pt.Tensor) -> None:
-        """Custom dataset class for surface pressure datasets to train a convolutional autoencoder
+        """Custom class for surface pressure datasets to train a convolutional autoencoder neural network
 
         Args:
-            pressure_data (pt.Tensor): surface pressure data ("images")
+            pressure_data (pt.Tensor): surface pressure snapshots [height, width, n_snapshots]
         """
         self.cp = cp
 

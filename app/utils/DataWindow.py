@@ -1,14 +1,20 @@
 import torch as pt
-from torch.utils.data import Dataset, TensorDataset
+from torch.utils.data import TensorDataset
 
 
 class DataWindow():
-    """Class to create DataWindows from a dataset in latent space with (n, timesteps) where n is the number of dimensions in the latent space
-
-        The make_dataset function creates a rolling window that contains user-defined feature-label pairs to be fed through prediction models
-    """
-    def __init__(self, train: pt.Tensor, val: pt.Tensor=pt.Tensor(), test: pt.Tensor=pt.Tensor(), 
+    def __init__(self, train: pt.Tensor, val: pt.Tensor=pt.Tensor, test: pt.Tensor=pt.Tensor, 
                  input_width: int=40, pred_horizon: int=1) -> None:
+        """Create DataWindow instance. 
+        This class can be used to compute rolling windows over reduced/encoded snapshot tensors for creating time series datasets.
+
+        Args:
+            train (pt.Tensor): Training tensor
+            val (pt.Tensor, optional): Validation tensor. Defaults to pt.Tensor.
+            test (pt.Tensor, optional): Test tensor. Defaults to pt.Tensor.
+            input_width (int, optional): Length of the input sequence. Defaults to 40.
+            pred_horizon (int, optional): Prediction horizon. Defaults to 1.
+        """
         self.train = train
         self.val = val
         self.test = test
@@ -39,6 +45,7 @@ class DataWindow():
         return input_idx, pred_idx
     
     def make_dataset(self, data):
+        """ create timeseries dataset from the rolling window """
         input_seq = []
         target_seq = []
         # iterate over feature-label index pairs in rolling window and assign corresponding data pairs
@@ -50,8 +57,8 @@ class DataWindow():
         input_seq = pt.stack(input_seq)
         target_seq = pt.stack(target_seq)
 
-        # store all feature-label pairs in a Dataset object
-        return TimeSeriesTensorDataset(input_seq, target_seq)            
+        # store all feature-label pairs in a TensorDataset object
+        return TensorDataset(input_seq, target_seq)            
 
     @property
     def train_dataset(self):
@@ -63,27 +70,21 @@ class DataWindow():
     
     @property
     def test_dataset(self):
-        return self.make_dataset(self.test)
-    
-
-class TimeSeriesTensorDataset(TensorDataset):
-    def __init__(self, inputs, targets):
-        super().__init__(inputs, targets)
-
-    def __len__(self):
-        return super().__len__()
-    
-    def __getitem__(self, index):
-        return super().__getitem__(index)
-    
+        return self.make_dataset(self.test)    
 
 class DataWindow_end_to_end(DataWindow):
-    """Class to create DataWindows from datasets in full space with (256, 128, n) where n is the number of timesteps
-
-        The make_dataset function creates a rolling window that contains user-defined feature-label pairs to be fed through the end-to-end models
-    """
-    def __init__(self, train: pt.Tensor, val: pt.Tensor=pt.Tensor(), test: pt.Tensor=pt.Tensor(), 
+    def __init__(self, train: pt.Tensor, val: pt.Tensor=pt.Tensor, test: pt.Tensor=pt.Tensor, 
                  input_width: int=40, pred_horizon: int=1) -> None:
+        """Create DataWindow instance. 
+        This class can be used to compute rolling windows over snapshot tensors for creating time series datasets.
+
+        Args:
+            train (pt.Tensor): Training tensor
+            val (pt.Tensor, optional): Validation tensor. Defaults to pt.Tensor.
+            test (pt.Tensor, optional): Test tensor. Defaults to pt.Tensor.
+            input_width (int, optional): Length of the input sequence. Defaults to 40.
+            pred_horizon (int, optional): Prediction horizon. Defaults to 1.
+        """
         self.train = train
         self.val = val
         self.test = test
@@ -114,11 +115,12 @@ class DataWindow_end_to_end(DataWindow):
         return input_idx, pred_idx
     
     def make_dataset(self, data):
-        # data has shape (256, 128, timesteps), needs channel dimension
+        # data has shape (256, 128, timesteps), add channel dimension
         data = data.unsqueeze(0) 
         # data has shape (1, 256, 128, timesteps)
         input_seq = []
         target_seq = []
+
         # iterate over feature-label index pairs in rolling window and assign corresponding data pairs
         for input_idx, pred_idx in zip(*self.rolling_window(dataset_length=data.shape[3])):
             input_seq.append(data[:, :, :, input_idx])
@@ -128,5 +130,5 @@ class DataWindow_end_to_end(DataWindow):
         input_seq = pt.stack(input_seq)
         target_seq = pt.stack(target_seq)
 
-        # store all feature-label pairs in a Dataset object
-        return TimeSeriesTensorDataset(input_seq, target_seq) 
+        # store all feature-label pairs in a TensorDataset object
+        return TensorDataset(input_seq, target_seq) 

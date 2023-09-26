@@ -1,7 +1,6 @@
-# python file with often used helper functions
+""" Helper Functions """
 import os
 from os.path import join
-from pathlib import Path
 import torch as pt
 from autoencoder.CNN_VAE import make_VAE_model
 import utils.config as config
@@ -37,16 +36,16 @@ def find_target_index_in_dataset(nested_list, target_id):
     return -1
 
 
-def shift_input_sequence(orig_seq, new_pred):
+def shift_input_sequence(orig_seq: pt.Tensor, new_pred: pt.Tensor) -> pt.Tensor:
     """
     Perform sliding window operation on a given tensor.
 
     Parameters:
-        orig_seq (torch.Tensor): The initial tensor of shape [batch_size, input_timesteps * latent_size].
-        new_pred (torch.Tensor): The new tensor with latent_size elements to be appended.
+        orig_seq (pt.Tensor): The initial tensor of shape [batch_size, input_timesteps * latent_size].
+        new_pred (pt.Tensor): The new tensor with latent_size elements to be appended.
 
     Returns:
-        torch.Tensor: The tensor with the first timestep removed and the new_pred appended.
+        pt.Tensor: The tensor with the first timestep removed and the new_pred appended.
                      The resulting shape will be [batch_size, input_timesteps * latent_size].
     """
     # Get the number of latent dimensions
@@ -63,10 +62,23 @@ def shift_input_sequence(orig_seq, new_pred):
 
 
 def reduce_datasets_SVD_multi(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
+    """ Reduce datasets with the left singular vectors of the SVD for the training of neural networks
+    in the latent space.
+
+    For training with multiple flow conditions.
+
+    Args:
+        DATA_PATH (str): Path to the data directory.
+        SVD_PATH (str): Path to the SVD directory.
+        OUTPUT_PATH (str): Path to the output directory.
+
+    Returns:
+        (tuple): reduced and scaled datasets, U
+    """
     # load datasets
     train_data, val_data, test_data = load_datasets_multi(DATA_PATH=DATA_PATH, DIM_REDUCTION="SVD")
 
-    # load left singular vectors U
+    # load left singular vectors U and temporal mean
     U = pt.load(join(SVD_PATH, "U.pt"))
     mean = pt.load(join(SVD_PATH, "mean.pt"))
 
@@ -80,6 +92,19 @@ def reduce_datasets_SVD_multi(DATA_PATH: str, SVD_PATH: str, OUTPUT_PATH: str):
 
 
 def reduce_datasets_VAE_multi(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, device: str):
+    """ Encode datasets with the CNN-VAE for the training of neural networks
+    in the latent space.
+
+    For training with multiple flow conditions.
+
+    Args:
+        DATA_PATH (str): Path to the data directory.
+        SVD_PATH (str): Path to the SVD directory.
+        OUTPUT_PATH (str): Path to the output directory.
+
+    Returns:
+        (tuple): reduced and scaled datasets, decoder
+    """
     # load datasets
     train_data, val_data, test_data = load_datasets_multi(DATA_PATH=DATA_PATH, DIM_REDUCTION="VAE")
 
@@ -99,6 +124,7 @@ def reduce_datasets_VAE_multi(DATA_PATH: str, VAE_PATH: str, OUTPUT_PATH: str, d
 
 def load_datasets_multi(DATA_PATH: str, DIM_REDUCTION: str):
     """ Load the pipeline datasets from the given directory """
+    
     print("Loading datasets ... ")
     train_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_train.pt"))
     val_data = pt.load(join(DATA_PATH, f"{DIM_REDUCTION}_val.pt")) 

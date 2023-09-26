@@ -1,3 +1,14 @@
+import sys
+import os
+from os.path import join
+from pathlib import Path
+
+# include app directory into sys.path
+parent_dir = Path(os.path.abspath(''))
+app_dir = join(parent_dir, "app")
+if app_dir not in sys.path:
+      sys.path.append(app_dir)
+
 import unittest
 from utils.DataWindow import DataWindow
 import torch as pt
@@ -24,6 +35,8 @@ num_windows = num_timesteps - total_window_size + 1
 
 
 class TestDataWindow(unittest.TestCase):
+    """ Unittest for DataWindow class """
+    
     def test_rolling_window(self):
         # initialize DataWindow object and call rolling_window method
         data_window = DataWindow(data_tensor, input_width=input_width, pred_horizon=pred_horizon)
