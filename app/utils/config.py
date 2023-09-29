@@ -5,6 +5,7 @@
 ########################################################
 
 time_steps_per_cond = 500
+orig_resolution = (465, 159)
 target_resolution = (256, 128)
 target_tensor_shape = (256, 128, 500)
 
