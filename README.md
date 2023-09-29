@@ -1,6 +1,10 @@
 # A Comparison of Reduced-Order Models for Wing Buffet Predictions
 
-![Alt Text](output/LSTM/single/VAE/param_study/VAE_LSTM_single_reconstruction.gif)
+<figure>
+  <img src="output/LSTM/single/VAE/param_study/VAE_LSTM_single_reconstruction.gif" alt="Animation of the CNN-VAE-LSTM model predictions">
+  <figcaption>Ground Truth compared against the auto-regressive prediction of the CNN-VAE-LSTM model, which is a combination of a CNN-VAE neural network for dimensionality reduction and an LSTM neural network for time-evolution.</figcaption>
+</figure>
+
 ## Abstract
 
 The primary aim of this study is to train and evaluate a set of Reduced-Order Models (ROMs) for
