@@ -26,14 +26,15 @@ demanding further investigation and optimization.
 ## BibTex Citation
 
 ```
-@misc{schreiber2023,
-  author       = {Anton Schreiber},
-  title        = {A Comparison of Reduced-Order Models for Wing Buffet Predictions},
-  month        = nov,
+@phdthesis{schreiber2023,
+  author       = {Schreiber, Anton},
+  title        = {{A Comparison of Reduced-Order Models for Wing 
+                   Buffet Predictions}},
+  school       = {Technische Universität Braunschweig},
   year         = 2023,
-  publisher    = {Zenodo},
-  version      = 1,
-  doi          = {???}
+  month        = dec,
+  doi          = {10.5281/zenodo.10255520},
+  url          = {https://doi.org/10.5281/zenodo.10255520}
 }
 ```
 
